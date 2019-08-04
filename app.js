@@ -57,8 +57,8 @@ app
 .put('/user/:uid',						 auth.ensureAuth('admin'), user.update)
 
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
-.get('/probs',			auth.ensureAuth('user'), prob.getProbs)
-.get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
+.post('/probs',			auth.ensureAuth('user'), prob.getProbs)
+//.get('/probs/:tags',	auth.ensureAuth('user'), prob.getProb)
 
 
 /*

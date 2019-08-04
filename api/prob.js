@@ -1,10 +1,22 @@
-const { Prob, Tag } = require('../models')
+const { Prob, Tag, Sequelize: { Op } } = require('../models')
 const { hashing } = require('../hashing')
 
 
 const getProbs = async (req, res) => {
-	const list =  await Prob.findAll()
-	return res.status(201).json({ list })
+	const tags = req.body.tags
+	try {
+		const list =  await Prob.findAll({ 
+			include: [{
+				model: Tag,
+				where: { id: tags }
+			}]
+		})
+		console.log(list)
+		return res.status(201).json({ list })
+	} catch (e) {
+		console.error(e)
+		return res.status(403).json({ error: '실패' })
+	}
 }
 
 const getProb = async(req, res, next) => {
@@ -22,7 +34,6 @@ const createProb = async (req, res, next) => {
 		const prob = await Prob.create({
 			title, description, flag: hashing(flag), author, score
 		})
-		console.log(tags)
 		if(tags) { // 생성한 태그가 목록에 없을 경우, 생성.
 			const result = await Promise.all(tags.map(tag => Tag.findOrCreate({ where: { title: tag } })))
 			await prob.addTags(result.map(r => r[0]))
