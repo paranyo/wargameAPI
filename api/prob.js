@@ -8,11 +8,9 @@ const getProbs = async (req, res) => {
 		const list =  await Prob.findAll({ 
 			include: [{
 				model: Tag,
-				where: { id: tags }
+				where: { id: tags },
 			}]
 		})
-
-		console.log(list)
 		return res.status(201).json({ list })
 	} catch (e) {
 		console.error(e)
