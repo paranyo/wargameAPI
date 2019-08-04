@@ -11,6 +11,7 @@ const getProbs = async (req, res) => {
 				where: { id: tags }
 			}]
 		})
+
 		console.log(list)
 		return res.status(201).json({ list })
 	} catch (e) {
