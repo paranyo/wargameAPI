@@ -52,13 +52,13 @@ app
 .put('/manage/tag/update',	 auth.ensureAuth('admin'), tag.updateTag)
 
 .post('/manage/prob/create', auth.ensureAuth('admin'), prob.createProb)
-.put('/manage/prob/update',	auth.ensureAuth('admin'), prob.updateProb)
+.put('/manage/prob/:pid',	auth.ensureAuth('admin'), prob.updateProb)
 
 .put('/user/:uid',						 auth.ensureAuth('admin'), user.update)
 
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
 .post('/probs',			auth.ensureAuth('user'), prob.getProbs)
-//.get('/probs/:tags',	auth.ensureAuth('user'), prob.getProb)
+.get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
 
 
 /*
