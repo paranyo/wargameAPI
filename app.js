@@ -36,6 +36,7 @@ app.use('/', indexRouter);
 app
 
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
+.get('/myinfo',			auth.ensureAuth('user'), user.myInfo)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)

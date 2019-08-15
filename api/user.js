@@ -50,11 +50,15 @@ const getAll = async (req, res) => {
 }
 const get = async (req, res) => {
 	const { uid } = req.params
-	if(!uid) return res.status(400).json({ error: '아이디 값이 없습니다' })
-	const user   = await User.find({ where: { uid } }, { paranoid: false })
-	res.json({ user })
+	if(!uid) res.status(401).json({ error: '실패' })
+	const user   = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid } }, { paranoid: false })
+	return res.status(201).json({ user })
 }
-/*
+const myInfo = async (req, res) => {
+
+	const user   = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid: req.user.id } })
+	return res.status(201).json({ user })
+}
 /* Need! */
 /* 나중에 user.pw 등 랭크에 필요 없는 정보는 제거 후 표출하거나 디비단에서 받아오지 않아야 함*/
 /* 일단 유저 이름과 레벨만 띄워주지만 이것도 나중에 점수 등으로 추가 정보를 보여주어야 함 */
@@ -93,5 +97,6 @@ module.exports = {
 	get,
 	getAll,
 	update,
+	myInfo
 	/*getRank,*/
 }
