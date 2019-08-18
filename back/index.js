@@ -1,7 +1,6 @@
 const Sequelize = require('sequelize')
-const path			= require('path')
 const env				= process.env.NODE_ENV || 'development'
-const config		= require(path.join(__dirname, '..', 'config', 'config.json'))[env]
+const config		= require('../config/config')[env]
 const db				= {}
 
 const sequelize	= new Sequelize(
@@ -17,7 +16,7 @@ db.Tag	= require('./tag')(sequelize, Sequelize)
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
-db.Tag.hasMany(db.Prob,		 { foreignKey: 'tag',  sourceKey: 'id'})
-db.Prob.belongsTo(db.Prob, { foreignKey: 'tag',  sourceKey: 'id'})
+db.Tag.hasMany(db.Prob,		 { foreignKey: 'title',  sourceKey: 'name'})
+db.Prob.belongsTo(db.Prob, { foreignKey: 'title',  sourceKey: 'name'})
 
 module.exports = db

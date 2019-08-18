@@ -11,10 +11,16 @@ const indexRouter = require('./routes/index')
 const user				= require('./api/user')
 require('dotenv').config()
 
+const sequelize = require('./models').sequelize;
+
+
 const prob = require('./api/prob')
 const tag	 =	require('./api/tag')
 
+
 const app = express()
+sequelize.sync()
+
 app.use(cors())				// cross origin request site인데 이거 나중에 wargame1에서만 가능하게끔으로 바꿔야 한다.
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -30,7 +36,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
 
 
 app
