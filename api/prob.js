@@ -5,7 +5,7 @@ const { hashing } = require('../hashing')
 const getProbs = async (req, res) => {
 	const tags = req.body.tags
 	try {
-		const list =  await Prob.findAll({ 
+		const list =  await Prob.findAll({ paranoid: false }, { 
 			include: [{
 				model: Tag,
 				where: { title: tags },
@@ -68,7 +68,21 @@ const updateProb = async (req, res, next) => {
 		console.error(e)
 		next(e)
 	}
-		
+}
+
+const visibleProb = async (req, res, next) => {
+	const { id, isOpen } = req.body
+	try {
+		if(isOpen == true) {
+			Prob.restore({ where: { id } })
+		} else if(isOpen == false) {
+			Prob.destroy({ where: { id } })
+		}
+		return res.status(201).json({ result: '성공' })
+	} catch (error) {
+		console.error(e)
+		next(e)
+	}
 }
 /*
 const authProb = async(req, res) => {
@@ -91,4 +105,5 @@ module.exports = {
 	createProb,
 	updateProb,/*
 	authProb,*/
+	visibleProb,
 }
