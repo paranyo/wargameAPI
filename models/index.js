@@ -17,7 +17,7 @@ db.Tag	= require('./tag')(sequelize, Sequelize)
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
-db.Tag.hasMany(db.Prob,		 { foreignKey: 'tag',  sourceKey: 'id'})
+db.Tag.hasMany(db.Prob,		 { foreignKey: 'tag',  sourceKey: 'id', as: 'tagName' })
 db.Prob.belongsTo(db.Prob, { foreignKey: 'tag',  sourceKey: 'id'})
 
 module.exports = db

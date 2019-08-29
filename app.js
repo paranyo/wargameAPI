@@ -8,15 +8,15 @@ const auth				= require('./auth')
 const bodyParser	= require('body-parser')
 
 const indexRouter = require('./routes/index')
-const user				= require('./api/user')
 require('dotenv').config()
 
 const sequelize = require('./models').sequelize;
 
 
-const prob = require('./api/prob')
-const tag	 =	require('./api/tag')
-
+const user	= require('./api/user')
+const prob	= require('./api/prob')
+const tag		=	require('./api/tag')
+const admin = require('./api/admin')
 
 const app = express()
 sequelize.sync()
@@ -59,13 +59,16 @@ app
 
 .post('/manage/prob/create', auth.ensureAuth('admin'), prob.createProb)
 .put('/manage/prob/visible', auth.ensureAuth('admin'), prob.visibleProb)
-.put('/manage/prob/:pid',		 auth.ensureAuth('admin'), prob.updateProb)
+.put('/manage/prob/:id',		 auth.ensureAuth('admin'), prob.updateProb)
+
+.post('/manage/hash',				 auth.ensureAuth('admin'), admin.getHash)
 
 .put('/user/:uid',						 auth.ensureAuth('admin'), user.update)
 
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
 .post('/probs',			auth.ensureAuth('user'), prob.getProbs)
 .get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
+
 
 
 /*
