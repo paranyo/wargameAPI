@@ -1,5 +1,4 @@
 const { User, Prob, Tag, Sequelize: { Op } } = require('../models')
-const { hashing } = require('../hashing')
 
 
 const getProbs = async (req, res) => {
@@ -48,7 +47,7 @@ const createProb = async (req, res, next) => {
 	try {
 		// 문제 생성
 		const prob = await Prob.create({
-			title, description, flag: hashing(flag), author, tag, score
+			title, description, flag, author, tag, score
 		}) 
 	} catch (e) {
 		console.error(e)
@@ -94,26 +93,29 @@ const visibleProb = async (req, res, next) => {
 		next(e)
 	}
 }
-/*
 const authProb = async(req, res) => {
-	const { pid } = req.params
+	const { id } = req.params
 	const body = req.body
-	if(typeof(body.flag) != "undefined") body.flag = hashing(body.flag)
-	const prob = await Probs.findOne({ _id: pid })
-	console.log(prob.flag)
-	console.log(body.flag)
-	if(prob.flag == body.flag)
-		res.status(201).json({ msg: 'correct' })
-	else
-		res.status(201).json({ msg: 'incorrect' })
+	if(req.body.flag) {
+		try {
+			const prob = await Prob.findOne({ where: { id } })
+			if(prob.dataValues.flag === req.body.flag)
+				return res.status(201).json({ result: 'Correct!' })
+			else
+				return res.status(401).json({ result: 'Incorrect' })
+		} catch(error) {
+			console.error(error)
+			next(error)
+		}
+	} else {
+		return res.status(401).json({ result: '비허가 접근입니다' })
+	}
 }
-
-*/
 module.exports = {
 	getProbs,
 	getProb,
 	createProb,
-	updateProb,/*
-	authProb,*/
+	updateProb,
+	authProb,
 	visibleProb,
 }

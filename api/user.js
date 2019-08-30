@@ -1,11 +1,10 @@
 const { User, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
-const { hashing } = require('../hashing')
 
 const login = async (req, res, next) => {	// id = uid 바꿔야함
 	const { id, pw } = req.body
-	const user = await User.findOne({ where: { [Op.and]: [{ uid: id }, { password: hashing(pw) }] } })
+	const user = await User.findOne({ where: { [Op.and]: [{ uid: id }, { password: pw }] } })
 	if(!user) return res.status(401).json({ error: '실패' })
 	const accessToken   = auth.signToken(user.uid)
 	if(user.level === 'chore') {
@@ -21,7 +20,7 @@ const join = async (req, res, next) => { // id = uid, pw = password 나중에 �
 		const exUser = await User.find({ where: { [Op.or]: [{ uid: id }, { nick }], } })
 		if(exUser)
 			return res.status(401).json({ error: '이미 계정이 있습니다' })
-		await User.create({ uid: id, nick, password: hashing(pw), ip: '127.0.0.1' }) // 유저 생성
+		await User.create({ uid: id, nick, password: pw, ip: '127.0.0.1' }) // 유저 생성
 		return res.status(200).json({ result: true })
 
 	} catch (error) {

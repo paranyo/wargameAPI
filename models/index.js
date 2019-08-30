@@ -14,6 +14,7 @@ db.Sequelize = Sequelize
 db.User = require('./user')(sequelize, Sequelize)
 db.Prob	= require('./prob')(sequelize, Sequelize)
 db.Tag	= require('./tag')(sequelize, Sequelize)
+db.Log	= require('./log')(sequelize, Sequelize)
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
