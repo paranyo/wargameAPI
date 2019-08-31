@@ -1,4 +1,4 @@
-const { User, Sequelize: { Op } } = require('../models')
+const { User, Prob, Auth, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
 
@@ -40,7 +40,40 @@ const getAll = async (req, res) => {
 				user = await User.findAll({ attributes: ['uid', 'nick', 'updatedAt'], where: { level: { [Op.ne]: 'chore' } } })
 			}
 		}
-		return res.status(201).json(user) 
+		/*
+		*	유저 스코어값 계산. sequleize 익숙해지면 sequelize 사용해서 계산할 것.
+		*/
+
+		for(let i = 0; i < user.length; i++) {
+			const probs = await Auth.findAll({
+				where: { solver: user[i].dataValues.uid, isCorrect: 1 },
+				include: [
+					{ model: Prob, required: true, attributes: ['score'] },
+				],
+				order: [[Prob, 'createdAt', 'ASC']]
+			})
+			try {
+				user[i].dataValues.lastSolved = probs[0].dataValues.createdAt
+			} catch(error) {
+				user[i].dataValues.lastSolved = ''
+				user[i].dataValues.score			= 0
+				continue
+			}
+			user[i].dataValues.score = probs.reduce((s, n, i) => {
+				return s + parseInt(n.dataValues.prob.dataValues.score)
+			}, 0)
+		}
+		/* 
+		*		스코어 내림차순
+		*		스코어가 같을 경우엔 더 빨리 제출한 사람순
+		*/
+		user = user.sort((a, b) => {
+			if(b.dataValues.score !== a.dataValues.score)
+				 return b.dataValues.score - a.dataValues.score
+			else
+				return a.dataValues.lastSolved - b.dataValues.lastSolved
+		})
+		return res.status(201).json(user)
 	} catch(e) {
 		console.error(e)
 		return res.status(401).json({ error: '실패' })
@@ -49,13 +82,23 @@ const getAll = async (req, res) => {
 }
 const get = async (req, res) => {
 	const { uid } = req.params
-	if(!uid) res.status(401).json({ error: '실패' })
-	const user   = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid } }, { paranoid: false })
-	return res.status(201).json({ user })
-}
-const myInfo = async (req, res) => {
-
-	const user   = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid: req.user.id } })
+	let user
+	if(!uid) {
+		if(!req.user)
+			return res.status(401).json({ error: '실패' })
+		else
+			user = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid: req.user.id } })
+	} else
+		user = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid } }, { paranoid: false })
+	const scores = await Auth.findAll({
+		where: { solver: req.user.id, isCorrect: 1 },
+		include: [
+			{ model: Prob, required: true, attributes: ['score'] }
+		],
+	})
+	user.dataValues.score = scores.reduce((sum, n, i) => {
+		return sum + parseInt(n.dataValues.prob.dataValues.score)
+	}, 0)
 	return res.status(201).json({ user })
 }
 /* Need! */
@@ -90,12 +133,11 @@ const update = async (req, res) => {
 	}
 }
 
+
 module.exports = {
 	login, 
 	join,
 	get,
 	getAll,
 	update,
-	myInfo
-	/*getRank,*/
 }

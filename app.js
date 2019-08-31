@@ -43,7 +43,7 @@ app
 .use(log.logging())
 
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
-.get('/myinfo',			auth.ensureAuth('user'), user.myInfo)
+.get('/myinfo',			auth.ensureAuth('user'), user.get)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)

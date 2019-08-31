@@ -1,4 +1,4 @@
-const { User, Prob, Tag, Sequelize: { Op } } = require('../models')
+const { Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
 
 
 const getProbs = async (req, res) => {
@@ -96,16 +96,35 @@ const visibleProb = async (req, res, next) => {
 const authProb = async(req, res) => {
 	const { id } = req.params
 	const body = req.body
+
+	const scores = await Auth.findAll({ 
+		where: { solver: req.user.id, isCorrect: 1 },
+		include: [
+			{ model: Prob, required: true, attributes: ['score'] }
+		],
+	})
+	let sum = 0
+	scores.map((sc) => {
+		sum += parseInt(sc.dataValues.prob.dataValues.score)
+	})
 	if(req.body.flag) {
 		try {
 			const prob = await Prob.findOne({ where: { id } })
-			if(prob.dataValues.flag === req.body.flag)
-				return res.status(201).json({ result: 'Correct!' })
-			else
-				return res.status(401).json({ result: 'Incorrect' })
+			if(prob) {
+				const already = await Auth.findOne({ where: { solver: req.user.id, pid: id, isCorrect: 1 } })
+				if(already)
+					return res.status(201).json({ result: 'Already Solved' })
+				if(prob.dataValues.flag === req.body.flag) {
+					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true })
+					return res.status(201).json({ result: 'Correct!' })
+				} else {
+					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false })
+					return res.status(201).json({ result: 'Incorrect' })
+				}
+			}
 		} catch(error) {
 			console.error(error)
-			next(error)
+	next(error)
 		}
 	} else {
 		return res.status(401).json({ result: '비허가 접근입니다' })
