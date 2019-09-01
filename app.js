@@ -67,6 +67,7 @@ app
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
 .post('/probs',			auth.ensureAuth('user'), prob.getProbs)
 .get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
+
 .post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
 
 

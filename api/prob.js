@@ -6,26 +6,33 @@ const getProbs = async (req, res) => {
 	try {
 		if(req.user) {
 			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
+
+			let tagList = tags ? { where: { tagId: { [Op.in]: tags } } } : {}
+		
 			if(authority.dataValues.level == 'chore') {
-				if(tags) {
-					const list = await Prob.findAll({ 
-						where: { tag: { [Op.in]: tags } },
-						paranoid: false,
-					})
-					return res.status(201).json({ list })
-				} else {
-					const list = await Prob.findAll({ paranoid: false })
-					return res.status(201).json({ list })
-				}
+				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } }, include: [
+					{ model: Prob, required: true, paranoid: false }]})
 			} else {
-				if(tags) {
-					const list = await Prob.findAll({	where: { tag: { [Op.in]: tags } }	})
-					return res.status(201).json({ list })
-				} else {
-					const list = await Prob.findAll()
-					return res.status(201).json({ list })
+				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },include: [
+					{ model: Prob, required: true }]})
+			}
+
+			for(let i = 0; i < list2.length; i++) {
+				for(let j = 0; j < list2[i].dataValues.probs.length; j++) {
+
+					list2[i].dataValues.probs[j].dataValues.tag = list2[i].dataValues.title
+					let pid = list2[i].dataValues.probs[j].dataValues.id
+					const solvers = await Auth.findAll({ where: { pid, isCorrect: 1 },
+						include: [{ model: Prob, required: true, }]
+					})
+					list2[i].dataValues.probs[j].dataValues.solver = solvers.length
 				}
 			}
+			let list = []
+			list2.forEach((tag) => { tag.dataValues.probs.forEach(a => { list.push(a) })	})
+
+
+			return res.status(201).json({ list })
 		}
 	} catch (e) {
 		console.error(e)
@@ -41,13 +48,14 @@ const getProb = async(req, res, next) => {
 	return res.status(201).json({ prob })
 }
 
+
 const createProb = async (req, res, next) => {
-	const { title, description, flag, author, score, tag } = req.body // tags는 객체 형태로 옴
+	const { title, description, flag, author, score, tagId } = req.body // tags는 객체 형태로 옴
 
 	try {
 		// 문제 생성
 		const prob = await Prob.create({
-			title, description, flag, author, tag, score
+			title, description, flag, author, tagId, score
 		}) 
 	} catch (e) {
 		console.error(e)
@@ -58,7 +66,7 @@ const createProb = async (req, res, next) => {
 
 const updateProb = async (req, res, next) => {
 	const id = req.params.id
-	const { title, description, flag, author, score, tag, isOpen } = req.body
+	const { title, description, flag, author, score, tagId, isOpen } = req.body
 	// author는 외래 키이므로 디비에 어드민으로 존재하지 않는 경우 예외 처리 해야함
 	try {
 		if(isOpen == true)	// 문제를 열 경우 deleteAt = null
@@ -66,7 +74,7 @@ const updateProb = async (req, res, next) => {
 		const prob = await Prob.findOne({ where: { id }, paranoid: false })
 		if(!prob) return res.status(404).json({ error : '존재하지 않는 문제 ' })
 		if(title)
-			Prob.update({ title, description, flag, author, score, tag }, { where: { id }, paranoid: false })	
+			Prob.update({ title, description, flag, author, score, tagId }, { where: { id }, paranoid: false })	
 			// 문제 업데이트
 		if(isOpen == false) // 문제를 닫을 경우 수정 후 닫기 위해 destroy 나중에 함
 			Prob.destroy({ where: { id } })
@@ -80,7 +88,6 @@ const updateProb = async (req, res, next) => {
 
 const visibleProb = async (req, res, next) => {
 	const { id, isOpen } = req.body
-	console.log(req.body)
 	try {
 		if(isOpen == true) {
 			Prob.restore({ where: { id } })

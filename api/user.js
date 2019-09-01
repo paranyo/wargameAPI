@@ -83,15 +83,23 @@ const getAll = async (req, res) => {
 const get = async (req, res) => {
 	const { uid } = req.params
 	let user
+	let userId
+	let opt = {}
 	if(!uid) {
 		if(!req.user)
 			return res.status(401).json({ error: '실패' })
 		else
-			user = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid: req.user.id } })
-	} else
-		user = await User.find({ attributes: ['uid', 'nick', 'money'], where: { uid } }, { paranoid: false })
+			userId = req.user.id
+	} else {
+		userId = uid
+		opt = { paranoid: false }
+	}
+		user = await User.find({ 
+			attributes: ['uid', 'nick', 'money', 'level', 'ip'], 
+			where: { uid: userId } 
+		}, opt)
 	const scores = await Auth.findAll({
-		where: { solver: req.user.id, isCorrect: 1 },
+		where: { solver: userId, isCorrect: 1 },
 		include: [
 			{ model: Prob, required: true, attributes: ['score'] }
 		],
@@ -111,21 +119,20 @@ const getRank = async (req, res) => {
 }
 */
 const update = async (req, res) => {
-	const { uid } = req.params
-	const { nick, level, isBan } = req.body
+	const { uid, nick, level, isBan, ip, money } = req.body
 	try {
-		if(isBan !== undefined)
+		if(isBan !== undefined) {
 			if(isBan.toString() == 'false')		// isBan이 false면 밴 풀기
-				User.restore({ where: { uid } })
+				await User.restore({ where: { uid } })
+			else if(isBan.toString() == 'true')
+				await User.destroy({ where: { uid } })
 
-		const user = await User.find({ uid })
-		if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
-		
-		await User.update({ uid, nick, level }, { where: { uid } })
-		if(isBan !== undefined)
-			if(isBan.toString() == 'true')
-				User.destroy({ where: { uid } })
-
+		console.log(req.body)
+		} else {
+			const user = await User.find({ uid })
+			if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
+			await User.update({ nick, level, ip, money }, { where: { uid } })
+		}
 		return res.status(201).json({ result: '성공' })
 	} catch(e) {
 		console.error(e)

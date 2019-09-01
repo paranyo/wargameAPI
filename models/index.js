@@ -19,8 +19,9 @@ db.Auth = require('./auth')(sequelize, Sequelize)
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
-db.Tag.hasMany(db.Prob,		 { foreignKey: 'tag',  sourceKey: 'id', as: 'tagName' })
-db.Prob.belongsTo(db.Prob, { foreignKey: 'tag',  sourceKey: 'id'})
+
+db.Tag.hasMany(db.Prob,		 { foreignKey: 'tagId',  sourceKey: 'id'})
+db.Prob.belongsTo(db.Tag,  { foreignKey: 'tagId',  sourceKey: 'id'})
 
 db.User.hasMany(db.Auth,	 { foreignKey: 'solver', sourceKey: 'uid' })
 db.Auth.belongsTo(db.User, { foreignKey: 'solver', sourceKey: 'uid' })

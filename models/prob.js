@@ -21,10 +21,6 @@ module.exports = (sequelize, DataTypes) => (
 			type: DataTypes.STRING(256),
 			allowNull: true,
 		},
-		tag: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
 	}, {
 		timestamps: true,
 		paranoid: true
