@@ -47,6 +47,7 @@ app
 .get('/user',				auth.ensureAuth('user'), user.getAll)
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)
+.post('/user/sendMail',   user.sendMail)
 
 
 //.get('/user',				  user.getAll)

@@ -1,6 +1,8 @@
 const { User, Prob, Auth, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
+const { hashing } = require('../hashing.js')
+const nodemailer	= require('nodemailer')
 
 const login = async (req, res, next) => {	// id = uid 바꿔야함
 	const { id, pw } = req.body
@@ -15,17 +17,64 @@ const login = async (req, res, next) => {	// id = uid 바꿔야함
 }
 
 const join = async (req, res, next) => { // id = uid, pw = password 나중에 바꿔야함 DB에 넣기 쉽게
-	const { id, nick, pw } = req.body
+	const { id, nick, email, pw } = req.body
 	try {		// 이미 있는 id or nick
 		const exUser = await User.find({ where: { [Op.or]: [{ uid: id }, { nick }], } })
 		if(exUser)
 			return res.status(401).json({ error: '이미 계정이 있습니다' })
-		await User.create({ uid: id, nick, password: pw, ip: '127.0.0.1' }) // 유저 생성
+		await User.create({ uid: id, nick, email, password: pw, ip: '127.0.0.1' }) // 유저 생성
 		return res.status(200).json({ result: true })
 
 	} catch (error) {
 		console.error(error)
 		return res.status(401).json({ error: '실패' })
+	}
+}
+
+const passwordGenerator = (len) => {
+	let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNNOPQRSTUWXYZ1234567890!@#$%^&*()"
+	let string = ""
+	for(let i = 0; i < len; i++)
+		string += chars.charAt(Math.floor(Math.random() * chars.length))
+	return string
+}
+
+const sendMail = async (req, res, next) => {
+	const { uid, email } = req.body
+	try {
+		const user = await User.find({ where : { uid, email } })
+		if(user) {
+			let transporter = nodemailer.createTransport({
+				service: 'gmail',
+				auth: {
+					user: 'w3b1sg00d@gmail.com',
+					pass: 'h3541578'
+				}
+			})
+			let newPW = passwordGenerator(12)
+			let hashedPW = hashing(crypto.createHash('sha256').update(newPW).digest('hex'))
+
+			await User.update({ password: hashedPW }, { where: { uid } })
+
+			let mailOptions = {
+				from: 'PARANYO GAMES',
+				to: user.email,
+				subject: '비밀번호 변경 메일입니다.',
+				text: newPW
+			}
+		
+			transporter.sendMail(mailOptions, (error, info) => {
+				if(error) console.error(error)
+				else console.log('비밀번호 변경 메일을 보냈습니다 => ' + info.response)
+			})
+			return res.status(201).json({ result: '성공' })
+
+		} else {
+			return res.status(401).json({ error: '일치하는 계정이 없습니다.' })
+		}
+	} catch(error) {
+		console.error(error)
+		return res.status(500).json({ error: '뭐야?!' })
 	}
 }
 
@@ -95,7 +144,7 @@ const get = async (req, res) => {
 		opt = { paranoid: false }
 	}
 		user = await User.find({ 
-			attributes: ['uid', 'nick', 'money', 'level', 'ip'], 
+			attributes: ['uid', 'nick', 'money', 'level', 'ip', 'email'], 
 			where: { uid: userId } 
 		}, opt)
 	const scores = await Auth.findAll({
@@ -112,26 +161,30 @@ const get = async (req, res) => {
 /* Need! */
 /* 나중에 user.pw 등 랭크에 필요 없는 정보는 제거 후 표출하거나 디비단에서 받아오지 않아야 함*/
 /* 일단 유저 이름과 레벨만 띄워주지만 이것도 나중에 점수 등으로 추가 정보를 보여주어야 함 */
-/*
-const getRank = async (req, res) => {
-	let user = await User.find({ isBan: 0 })
-	res.json({ user })
-}
-*/
+
 const update = async (req, res) => {
-	const { uid, nick, level, isBan, ip, money } = req.body
+	const { uid, pw, nick, email, level, isBan, ip, money, reason } = req.body
 	try {
 		if(isBan !== undefined) {
 			if(isBan.toString() == 'false')		// isBan이 false면 밴 풀기
 				await User.restore({ where: { uid } })
 			else if(isBan.toString() == 'true')
 				await User.destroy({ where: { uid } })
-
-		console.log(req.body)
+		} else if(pw !== undefined && reason !== undefined) {
+			/* 비밀번호 변경 로직 */
+			const currentPW = pw
+			const newPW			= hashing(reason)
+			const user = await User.find({ where: { uid, password: currentPW } })
+			if(user) {
+				await User.update({ password: newPW }, { where: { uid } })
+				return res.status(201).json({ result: '성공' })
+			} else {
+				return res.status(401).json({ result: '현재 비밀번호가 일치하지 않습니다.' })
+			}
 		} else {
 			const user = await User.find({ uid })
 			if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
-			await User.update({ nick, level, ip, money }, { where: { uid } })
+			await User.update({ nick, email, level, ip, money }, { where: { uid } })
 		}
 		return res.status(201).json({ result: '성공' })
 	} catch(e) {
@@ -147,4 +200,5 @@ module.exports = {
 	get,
 	getAll,
 	update,
+	sendMail,
 }

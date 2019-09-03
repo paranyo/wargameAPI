@@ -8,7 +8,7 @@ const log = {
 			const ipAddress	= req.headers['x-forwarded-for']
 			const userAgent	= req.headers['user-agent']
 			const referer		=	req.headers['referer']
-			const token			= req.headers['authorization']
+			const token			=	req.headers['authorization']
 			if(req.body.pw)
 				req.body.pw = hashing(req.body.pw)
 			else if(req.body.flag)
