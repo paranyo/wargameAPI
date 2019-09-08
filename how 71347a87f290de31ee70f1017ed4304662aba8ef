@@ -1,0 +1,119 @@
+[33mcommit 6706ded80263408f74fe9a5c2c58e7545f2f39ab[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Tue Sep 3 22:47:55 2019 +0900
+
+    ADD; sendMail API 추가 ( forgot password 기능 )
+    
+    잃어버린 비밀번호를 찾는다.
+    nodemailer 모듈을 사용했다
+    gmail로 보낸다. 하루 500개까지 보낸다.
+    500개를 초과하면.. 그 때가서 생각해봐야지?
+    꽤 괜찮군
+
+[33mcommit cb7922bc5082364cb96aa1c1348e7b12cb3c9eb8[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Sep 1 23:25:24 2019 +0900
+
+    REPAIR; user & prob api
+    
+    getuser
+    update user  관련 로직 수정
+
+[33mcommit a0cd3b39fe7ddc7ef6e77a6a9daa172fa2fd2992[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sat Aug 31 23:21:56 2019 +0900
+
+    ADD& REPAIR; AUTH LOGIC Added(Complete), RANKING VUE LOGIC Added(Complete)
+    
+    인증 로직 완성하였음
+    랭킹에 보여지는 유저 관련 로직도 완성하였음
+
+[33mcommit 4ba79222a26f4091a9da6e2086b99e5d3cc57f2d[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Fri Aug 30 23:52:46 2019 +0900
+
+    ADD & REPAIR; Auth Logic, Logging API ADDED; Hashing REPAIR;
+    
+    인증 로직 중 문제 정답 & 오답 여부 로직 추가
+    백엔드 접근 기록 로깅 로직 추가
+    해싱 방법 변경 ( 로깅 단계에서 pw나 flag같은 민감한 정보를 해싱함 )
+
+[33mcommit 71347a87f290de31ee70f1017ed4304662aba8ef[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Thu Aug 29 23:40:41 2019 +0900
+
+    FIXED; api/probs.js getProbs methods fixed
+    
+    모든 유저에게 닫힌 문제도 보여줬지만
+    이젠 어드민만 보여주고
+    유저는 열린 문제만 보여주게 변경하였지만
+    코드가 더러우니
+    나중에 리팩토링 해야함
+
+[33mcommit 9f727b1918a9b6247d4e249062d846acc37c0f01[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Aug 18 23:37:06 2019 +0900
+
+    REPAIR: 복수 Tag에서 단일 Tag로 변경함
+    
+    데이터 전달에 있어 미숙함이 있으므로
+    단일 태그 전송으로 변경하였음.
+
+[33mcommit 805a5e5b6e06b97571aa7d875040cc70e545a3a2[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Aug 18 19:42:41 2019 +0900
+
+    ADD & REPAIR: visibleProb 추가 및 수정
+    
+    visibleProb으로 문제를 열고 닫는 기능을 추가하였음
+
+[33mcommit 885fb2797c1f4ae009e4926d22ab8d0199123281[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Thu Aug 15 23:46:40 2019 +0900
+
+    ADD: MyInfo api 추가
+    
+    JWT 값을 이용해 유저 정보를 알아내고 이를 통해 데이터 베이스에 접근 한 뒤
+    정보를 받아와 리턴해주는 형식
+    
+    [F-E] Header의 유저 정보 뷰에 사용되었음
+
+[33mcommit 69e1a899f69811d2da5a60803e3eeccd682025b8[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Tue Aug 6 23:48:23 2019 +0900
+
+    REPAIR: tags 값을 id => title로 바꿈 ( probs api 중 create 함수)
+    
+    tags에서 원래 id 코드값 (숫자 배열)을 받아왔는데 이것으로 찾기엔 문제가 있었던 것으로 판단되어
+    그냥 title(문자열 배열)로 받는 것이 나은 것 같아 교체하였음.
+    문제 생성시 태그 추가 할 때 이상 없음
+
+[33mcommit 54540fcf9511b83457ceb11c944270e434f34d2a[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Aug 4 17:01:23 2019 +0900
+
+    REPAIR: prob getProbs 수정
+    
+    태그별 문제 리턴
+
+[33mcommit 4d9e620155664a0bed57cc4cbd241b6e027bea62[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Aug 4 16:02:49 2019 +0900
+
+    ADD: operatorAliases (연산자 보안) 추가
+    
+    연산자 별칭 제거
+
+[33mcommit 4224d3a43adde71598097f6499ca24e8a3efb11b[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Sun Aug 4 15:56:22 2019 +0900
+
+    REPAIR & ADD: getProbs API 수정
+    
+    태그에 해당하는 문제 가져오는 기능 추가 및 개선.
+
+[33mcommit 3c22f94387db0880666191beb90e6a35d1e2904d[m
+Author: paranyo <gksrbxo123@gmail.com>
+Date:   Fri Aug 2 18:19:08 2019 +0900
+
+    base file

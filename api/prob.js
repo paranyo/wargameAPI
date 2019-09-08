@@ -2,7 +2,7 @@ const { Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
 
 
 const getProbs = async (req, res) => {
-	const tags = req.body.tags
+	const { tags } = req.body
 	try {
 		if(req.user) {
 			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
@@ -10,22 +10,40 @@ const getProbs = async (req, res) => {
 			let tagList = tags ? { where: { tagId: { [Op.in]: tags } } } : {}
 		
 			if(authority.dataValues.level == 'chore') {
-				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } }, include: [
-					{ model: Prob, required: true, paranoid: false }]})
-			} else {
-				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },include: [
-					{ model: Prob, required: true }]})
+				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },
+					include: [{ model: Prob, required: true, paranoid: false }]
+				})
+			} else { // 나중에 플래그 같은 값은 없애고 보내야함
+				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } }, 
+					include: [
+						{ model: Prob, required: true, 
+							include: [
+							{	model: Auth, required: true, attributes: ['isCorrect'] },
+							{ where : { solver: req.user.id } }
+						]}
+					]
+				})
 			}
-
+			/* isCorrect 구하기 */
+			const authList = await Auth.findAll({ solver: req.user.id, 
+					attributes: ['isCorrect', 'solver', 'pid'] })
+			/* Solver  구하기 */
 			for(let i = 0; i < list2.length; i++) {
 				for(let j = 0; j < list2[i].dataValues.probs.length; j++) {
-
 					list2[i].dataValues.probs[j].dataValues.tag = list2[i].dataValues.title
 					let pid = list2[i].dataValues.probs[j].dataValues.id
-					const solvers = await Auth.findAll({ where: { pid, isCorrect: 1 },
+					const solvers = await Auth.findAll({
+						where: { pid, isCorrect: 1 },
 						include: [{ model: Prob, required: true, }]
 					})
 					list2[i].dataValues.probs[j].dataValues.solver = solvers.length
+					/* isCorrect 구하기 */
+					for(let k = 0; k < authList.length; k++) {
+						if(authList[k].dataValues.pid == list2[i].dataValues.probs[j].dataValues.id) {
+							list2[i].dataValues.probs[j].dataValues.isCorrect = authList[k].dataValues.isCorrect
+							authList.splice(k, 1)
+						}
+					}
 				}
 			}
 			let list = []
@@ -50,12 +68,15 @@ const getProb = async(req, res, next) => {
 
 
 const createProb = async (req, res, next) => {
-	const { title, description, flag, author, score, tagId } = req.body // tags는 객체 형태로 옴
+	const { title, description, flag, author, score, tagId, isOpen } = req.body // tags는 객체 형태로 옴
 
 	try {
 		// 문제 생성
+		let deletedAt = null
+		if(isOpen == false)
+			deletedAt = new Date()
 		const prob = await Prob.create({
-			title, description, flag, author, tagId, score
+			title, description, flag, author, tagId, score, deletedAt
 		}) 
 	} catch (e) {
 		console.error(e)
@@ -119,8 +140,12 @@ const authProb = async(req, res) => {
 			const prob = await Prob.findOne({ where: { id } })
 			if(prob) {
 				const already = await Auth.findOne({ where: { solver: req.user.id, pid: id, isCorrect: 1 } })
-				if(already)
-					return res.status(201).json({ result: 'Already Solved' })
+				if(already) {
+					if(prob.dataValues.flag === req.body.flag)
+						return res.status(201).json({ result: 'Already Solved, But Correct!' })
+					else 
+						return res.status(201).json({ result: 'Already Solved and Incorrect!' })
+				}
 				if(prob.dataValues.flag === req.body.flag) {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true })
 					return res.status(201).json({ result: 'Correct!' })
