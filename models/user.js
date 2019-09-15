@@ -30,7 +30,11 @@ module.exports = (sequelize, DataTypes) => (
 			type: DataTypes.INTEGER.UNSIGNED,
 			allowNull: true,
 			defaultValue: 1000,
-		}
+		},
+		intro: {
+			type: DataTypes.TEXT,
+			allowNull: true,
+		},
 	}, {
 		timestamps: true,
 		paranoid: true,	

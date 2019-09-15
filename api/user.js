@@ -60,7 +60,7 @@ const sendMail = async (req, res, next) => {
 				from: 'PARANYO GAMES',
 				to: user.email,
 				subject: '비밀번호 변경 메일입니다.',
-				text: newPW
+				text: 'New Password: ' + newPW
 			}
 		
 			transporter.sendMail(mailOptions, (error, info) => {
@@ -144,7 +144,7 @@ const get = async (req, res) => {
 		opt = { paranoid: false }
 	}
 		user = await User.find({ 
-			attributes: ['uid', 'nick', 'money', 'level', 'ip', 'email'], 
+			attributes: ['uid', 'nick', 'money', 'level', 'ip', 'email', 'intro'], 
 			where: { uid: userId } 
 		}, opt)
 	const scores = await Auth.findAll({
@@ -163,7 +163,10 @@ const get = async (req, res) => {
 /* 일단 유저 이름과 레벨만 띄워주지만 이것도 나중에 점수 등으로 추가 정보를 보여주어야 함 */
 
 const update = async (req, res) => {
-	const { uid, pw, nick, email, level, isBan, ip, money, reason } = req.body
+	const uid = req.params.uid
+	const { pw, nick, email, level, isBan, ip, money, reason, intro } = req.body
+
+	/* req.body 검증할 것!! 나중에 곢!!! */
 	try {
 		if(isBan !== undefined) {
 			if(isBan.toString() == 'false')		// isBan이 false면 밴 풀기
@@ -184,7 +187,7 @@ const update = async (req, res) => {
 		} else {
 			const user = await User.find({ uid })
 			if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
-			await User.update({ nick, email, level, ip, money }, { where: { uid } })
+			await User.update(req.body, { where: { uid } })
 		}
 		return res.status(201).json({ result: '성공' })
 	} catch(e) {

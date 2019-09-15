@@ -49,11 +49,6 @@ app
 .post('/user/join',   user.join)
 .post('/user/sendMail',   user.sendMail)
 
-
-//.get('/user',				  user.getAll)
-
-
-
 .post('/manage/tag/create',  auth.ensureAuth('admin'), tag.createTag)
 .put('/manage/tag/update',	 auth.ensureAuth('admin'), tag.updateTag)
 
@@ -61,7 +56,8 @@ app
 .put('/manage/prob/visible', auth.ensureAuth('admin'), prob.visibleProb)
 .put('/manage/prob/:id',		 auth.ensureAuth('admin'), prob.updateProb)
 
-.post('/manage/hash',				 auth.ensureAuth('admin'), admin.getHash)
+.post('/manage/hash', auth.ensureAuth('admin'), admin.getHash)
+.post('/manage/log',		auth.ensureAuth('admin'), admin.getLog)
 
 .put('/user/:uid',						 auth.ensureAuth('admin'), user.update)
 
@@ -71,14 +67,6 @@ app
 
 .post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
 
-
-
-/*
-.get('/manage/prob/:cid',			 challManage.getAllProb)
-.post('/manage/prob/:cid',		 challManage.createProb)
-.put('/manage/prob/:pid',			 challManage.updateProb)
-.get('/manage/prob/:cid/:pid', challManage.getProb)
-;*/
 
 
 // catch 404 and forward to error handler
