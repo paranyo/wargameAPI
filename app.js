@@ -18,6 +18,8 @@ const tag		=	require('./api/tag')
 const admin	= require('./api/admin')
 const log		= require('./api/log')
 
+const item	= require('./api/item')
+
 const app = express()
 sequelize.sync()
 
@@ -67,7 +69,7 @@ app
 
 .post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
 
-
+.get('/item/hair', auth.ensureAuth('user'), item.getItems)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -17,6 +17,9 @@ db.Tag	= require('./tag')(sequelize, Sequelize)
 db.Log	= require('./log')(sequelize, Sequelize)
 db.Auth = require('./auth')(sequelize, Sequelize)
 
+db.Item					= require('./item')(sequelize, Sequelize)
+db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
+
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
 
@@ -28,5 +31,9 @@ db.Auth.belongsTo(db.User, { foreignKey: 'solver', sourceKey: 'uid' })
 
 db.Prob.hasMany(db.Auth,	 { foreignKey: 'pid', sourceKey: 'id' })
 db.Auth.belongsTo(db.Prob, { foreignKey: 'pid', sourceKey: 'id' })
+
+db.ItemCategory.hasMany(db.Item,	{ foreignKey: 'cCode', sourceKey: 'id' })
+db.Item.belongsTo(db.ItemCategory,{ foreignKey:	'cCode', sourceKey: 'id' })
+
 
 module.exports = db
