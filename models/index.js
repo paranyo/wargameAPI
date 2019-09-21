@@ -19,6 +19,7 @@ db.Auth = require('./auth')(sequelize, Sequelize)
 
 db.Item					= require('./item')(sequelize, Sequelize)
 db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
+db.Inventory		= require('./inventory')(sequelize, Sequelize)
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
@@ -35,5 +36,11 @@ db.Auth.belongsTo(db.Prob, { foreignKey: 'pid', sourceKey: 'id' })
 db.ItemCategory.hasMany(db.Item,	{ foreignKey: 'cCode', sourceKey: 'id' })
 db.Item.belongsTo(db.ItemCategory,{ foreignKey:	'cCode', sourceKey: 'id' })
 
+db.Item.hasMany(db.Inventory,		{ foreignKey: 'itemCode', sourceKey: 'id' })
+db.Inventory.belongsTo(db.Item,	{ foreignKey: 'itemCode', sourceKey: 'id' })
+db.User.hasMany(db.Inventory,		{	foreginKey: 'userId',		sourceKey: 'uid' })
+db.Inventory.belongsTo(db.User,	{ foreginKey: 'userId',		sourceKey: 'uid' })
+db.ItemCategory.hasMany(db.Inventory,		{ foreignKey: 'cCode', sourceKey: 'id' })
+db.Inventory.belongsTo(db.ItemCategory,	{ foreignKey: 'cCode', sourceKey: 'id' })
 
 module.exports = db

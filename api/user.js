@@ -1,4 +1,4 @@
-const { User, Prob, Auth, Sequelize: { Op } } = require('../models')
+const { User, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
 const { hashing } = require('../hashing.js')
@@ -147,6 +147,8 @@ const get = async (req, res) => {
 			attributes: ['uid', 'nick', 'money', 'level', 'ip', 'email', 'intro'], 
 			where: { uid: userId } 
 		}, opt)
+
+	/* getUserScore */
 	const scores = await Auth.findAll({
 		where: { solver: userId, isCorrect: 1 },
 		include: [
@@ -156,6 +158,13 @@ const get = async (req, res) => {
 	user.dataValues.score = scores.reduce((sum, n, i) => {
 		return sum + parseInt(n.dataValues.prob.dataValues.score)
 	}, 0)
+
+	/* getUserInventory */
+	const items = await Inventory.findAll({
+		where: { userId, isEquip: 1 }, attributes: ['itemCode', 'cCode']
+	})
+
+	user.dataValues.items = items
 	return res.status(201).json({ user })
 }
 /* Need! */

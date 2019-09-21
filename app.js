@@ -71,6 +71,8 @@ app
 
 .get('/item/hair', auth.ensureAuth('user'), item.getItems)
 
+.post('/item/equip', auth.ensureAuth('user'), item.equipItem)
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	console.log('error!');
