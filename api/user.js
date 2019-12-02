@@ -4,6 +4,8 @@ const crypto = require('crypto')
 const { hashing } = require('../hashing.js')
 const nodemailer	= require('nodemailer')
 
+require('dotenv').config()
+
 const login = async (req, res, next) => {	// id = uid 바꿔야함
 	const { id, pw } = req.body
 	const user = await User.findOne({ where: { [Op.and]: [{ uid: id }, { password: pw }] } })
@@ -23,6 +25,8 @@ const join = async (req, res, next) => { // id = uid, pw = password 나중에 �
 		if(exUser)
 			return res.status(401).json({ error: '이미 계정이 있습니다' })
 		await User.create({ uid: id, nick, email, password: pw, ip: '127.0.0.1' }) // 유저 생성
+		await Inventory.create({ userId: id, isEquip: 1, itemCode: 30000, cCode: 1 })
+		await Inventory.create({ userId: id, isEquip: 1, itemCode: 20000, cCode: 2 })
 		return res.status(200).json({ result: true })
 
 	} catch (error) {
@@ -47,8 +51,8 @@ const sendMail = async (req, res, next) => {
 			let transporter = nodemailer.createTransport({
 				service: 'gmail',
 				auth: {
-					user: 'w3b1sg00d@gmail.com',
-					pass: 'h3541578'
+					user: process.env.MAIL_ID,
+					pass:	process.env.MAIL_PW
 				}
 			})
 			let newPW = passwordGenerator(12)
@@ -84,9 +88,18 @@ const getAll = async (req, res) => {
 		if(req.user) {
 			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
 			if(authority.dataValues.level == 'chore') { // 권한 레벨 chore면 전체 조회
-				user = await User.findAll({ paranoid: false })
+				user = await User.findAll({	paranoid: false, 
+					include: [
+						{ model: Inventory, required: true, attributes: ['itemCode'], where: { isEquip: 1 } }
+					],
+				})
 			} else {										// 아니면 어드민을 제외한 유저의 닉네임과 아이디 조회
-				user = await User.findAll({ attributes: ['uid', 'nick', 'updatedAt'], where: { level: { [Op.ne]: 'chore' } } })
+				user = await User.findAll({
+					attributes: ['uid', 'nick', 'updatedAt'], where: { level: { [Op.ne]: 'chore' } },
+					include: [
+						{ model: Inventory, required: true, attributes: ['itemCode'], where: { isEquip: 1 } }
+					],
+				})
 			}
 		}
 		/*
@@ -94,6 +107,14 @@ const getAll = async (req, res) => {
 		*/
 
 		for(let i = 0; i < user.length; i++) {
+			try {
+				user[i].dataValues.inventory = user[i].dataValues.inventories.map((i) => {
+					return JSON.stringify({ itemId: i.dataValues.itemCode, region: "KMS", version: "323" })
+				})
+				delete user[i].dataValues.inventories
+			} catch(e) {
+				continue
+			}
 			const probs = await Auth.findAll({
 				where: { solver: user[i].dataValues.uid, isCorrect: 1 },
 				include: [
@@ -163,7 +184,6 @@ const get = async (req, res) => {
 	const items = await Inventory.findAll({
 		where: { userId, isEquip: 1 }, attributes: ['itemCode', 'cCode']
 	})
-
 	user.dataValues.items = items
 	return res.status(201).json({ user })
 }

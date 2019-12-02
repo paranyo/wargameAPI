@@ -69,9 +69,10 @@ app
 
 .post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
 
-.get('/item/hair', auth.ensureAuth('user'), item.getItems)
+.get('/item/:uid',				auth.ensureAuth('user'), item.getItems)
+.post('/item/equip/:uid', auth.ensureAuth('user'), item.equipItem)
+.post('/item/box',				auth.ensureAuth('user'), item.useBox)
 
-.post('/item/equip', auth.ensureAuth('user'), item.equipItem)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
