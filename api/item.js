@@ -1,4 +1,4 @@
-const { Inventory, Item, Sequelize: { Op }, sequelize } = require('../models')
+const { User, Inventory, Item, Sequelize: { Op }, sequelize } = require('../models')
 
 
 const getItems = async (req, res) => {
@@ -40,14 +40,36 @@ const useBox = async (req, res) => {
 				let cCode;
 				if(box.dataValues.itemCode == 5150000)			cCode = 1
 				else if(box.dataValues.itemCode == 5152000)	cCode = 2
+				else if(box.dataValues.itemCode	== 4000703) cCode = box.dataValues.itemCode
+				else if(box.dataValues.itemCode	== 1162000) cCode = box.dataValues.itemCode
 				else	return res.status(503).json({ result: '비정상 접근입니다.' })
 				await box.destroy()
-				await Item.findOne({ where: { cCode }, order: sequelize.random(), attributes: ['id', 'cCode'] })
-					.then(async item => {
-						await Inventory.create({ 
-							isEquip: 0, itemCode: item.dataValues.id, cCode: item.dataValues.cCode, userId: uid 
+				if(cCode < 100) {
+					await Item.findOne({ where: { cCode }, order: sequelize.random(), attributes: ['id', 'cCode'] })
+						.then(async item => {
+							await Inventory.create({ 
+								isEquip: 0, itemCode: item.dataValues.id, cCode: item.dataValues.cCode, userId: uid 
+							})
 						})
-					})
+				} else {
+					/* 랜덤 머니 주는 곳이에요 */
+					let money = 0
+					if(cCode == 4000703)			money = Math.floor(Math.random() * 1000) * 10
+					else if(cCode == 1162000) money = Math.floor(Math.random() * 300) * 1000
+
+					if(money > 0) {
+						await User.findOne({ where: { uid }, attributes: ['money', 'uid'] }).then(async (user) => {
+							money += user.dataValues.money
+							if(user) {
+								await User.update({ money }, { where: { uid } })
+							} else {
+								return res.status(503).json({ result: '비정상 접근입니다.' })
+							}
+						})
+					} else {
+						return res.status(503).json({ result: '비정상 접근입니다.' })
+					}	
+				}
 				return res.status(201).json({ result: 'true' })
 			}
 			else {

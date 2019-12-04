@@ -1,4 +1,4 @@
-const { Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
+const { Inventory, Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
 
 
 const getProbs = async (req, res) => {
@@ -148,6 +148,22 @@ const authProb = async(req, res) => {
 				}
 				if(prob.dataValues.flag === req.body.flag) {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true })
+					/* 랜덤 아이템 */
+					let lottery		= (Math.random() * 100).toFixed(1)
+					let randomBox	= 0
+
+					/* 나중에 아이템 수정하깅 */ 
+					if(lottery > 0 && lottery < 84)					randomBox	=	4000703
+					else if(lottery > 84 && lottery < 89)		randomBox	= 1162000
+					else if(lottery > 89 && lottery < 99)		randomBox	= 1162000
+					else if(lottery > 99 && lottery < 99.5)	randomBox	= 1162000
+					else if(lottery > 84 && lottery < 99.9)	randomBox	= 1162000
+					else if(lottery == 99.9)								randomBox	= 1162000
+					
+					await Inventory.create({ 
+						itemCode: randomBox, cCode: 99, userId: req.user.id	
+					})
+					
 					return res.status(201).json({ result: 'Correct!' })
 				} else {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false })
@@ -156,7 +172,7 @@ const authProb = async(req, res) => {
 			}
 		} catch(error) {
 			console.error(error)
-	next(error)
+			next(error)
 		}
 	} else {
 		return res.status(401).json({ result: '비허가 접근입니다' })
