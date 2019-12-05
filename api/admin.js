@@ -1,4 +1,4 @@
-const { Auth, Log, Sequelize: { Op } } = require('../models')
+const { Notice, Auth, Log, Sequelize: { Op } } = require('../models')
 
 const getHash = (req, res, next) => {
 	const { flag } = req.body

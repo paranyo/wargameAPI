@@ -12,13 +12,13 @@ require('dotenv').config()
 
 const sequelize = require('./models').sequelize;
 
-const user	= require('./api/user')
-const prob	= require('./api/prob')
-const tag		=	require('./api/tag')
-const admin	= require('./api/admin')
-const log		= require('./api/log')
-
-const item	= require('./api/item')
+const user	 = require('./api/user')
+const prob	 = require('./api/prob')
+const tag		 =	require('./api/tag')
+const admin	 = require('./api/admin')
+const log		 = require('./api/log')
+const item	 = require('./api/item')
+const notice = require('./api/notice')
 
 const app = express()
 sequelize.sync()
@@ -47,9 +47,13 @@ app
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
+
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)
 .post('/user/sendMail',   user.sendMail)
+
+.get('/notice', notice.get)
+.post('/notice/create', auth.ensureAuth('admin'), notice.create)
 
 .post('/manage/tag/create',  auth.ensureAuth('admin'), tag.createTag)
 .put('/manage/tag/update',	 auth.ensureAuth('admin'), tag.updateTag)

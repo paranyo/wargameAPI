@@ -11,15 +11,19 @@ const sequelize	= new Sequelize(
 db.sequelize = sequelize
 db.Sequelize = Sequelize
 
-db.User = require('./user')(sequelize, Sequelize)
-db.Prob	= require('./prob')(sequelize, Sequelize)
-db.Tag	= require('./tag')(sequelize, Sequelize)
-db.Log	= require('./log')(sequelize, Sequelize)
-db.Auth = require('./auth')(sequelize, Sequelize)
+db.User		= require('./user')(sequelize, Sequelize)
+db.Prob		= require('./prob')(sequelize, Sequelize)
+db.Tag		= require('./tag')(sequelize, Sequelize)
+db.Log		= require('./log')(sequelize, Sequelize)
+db.Auth		= require('./auth')(sequelize, Sequelize)
+db.Notice = require('./notice')(sequelize, Sequelize)
 
 db.Item					= require('./item')(sequelize, Sequelize)
 db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
 db.Inventory		= require('./inventory')(sequelize, Sequelize)
+
+db.User.hasMany(db.Notice,		{ foreignKey: 'author', sourceKey: 'uid' })
+db.Notice.belongsTo(db.User,	{ foreignKey: 'author', sourceKey: 'uid' })
 
 db.User.hasMany(db.Prob,	 { foreignKey: 'author', sourceKey: 'uid'})
 db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})

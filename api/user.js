@@ -1,4 +1,4 @@
-const { User, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
+const { User, Notice, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
 const { hashing } = require('../hashing.js')
@@ -79,6 +79,18 @@ const sendMail = async (req, res, next) => {
 	} catch(error) {
 		console.error(error)
 		return res.status(500).json({ error: '뭐야?!' })
+	}
+}
+
+const getNotice = async (req, res) => {
+	let notice = []
+	try {
+		notice = await Notice.findAll({ paranoid: false })
+		return res.status(201).json(notice)
+	} catch (e) {
+		/* 에러 토쓰 */
+		console.error(e)
+		next(e)
 	}
 }
 
@@ -233,4 +245,5 @@ module.exports = {
 	getAll,
 	update,
 	sendMail,
+	getNotice
 }
