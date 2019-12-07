@@ -1,5 +1,6 @@
+require('dotenv').config()
 const jwt		 = require('jsonwebtoken')
-const secret = 'gyutaewilgohome2020/07/27..'
+const secret = process.env.JWT_SECRET
 const expiresIn = 3600 * 3
 const { User } = require('./models')
 
