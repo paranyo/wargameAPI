@@ -1,4 +1,6 @@
-const { Notice, Auth, Log, Sequelize: { Op } } = require('../models')
+const { File, Auth, Log, Sequelize: { Op } } = require('../models')
+const path = require('path')
+const shell = require('shelljs')
 
 const getHash = (req, res, next) => {
 	const { flag } = req.body
@@ -21,7 +23,47 @@ const getLog = async (req, res, next) => {
 	}
 }
 
+const getFile	= async (req, res, next) => {
+	return res.status(203).json(await File.findAll({ attributes: ['id', 'originName', 'saveName', 'createdAt', 'uploader', 'size', 'deletedAt'] }))
+}
+
+const uploadFile = async (req, res, next) => {
+	try {
+		if(req.user && req.file) {
+			const uploader	 = req.user.id
+			const originName = req.file.originalname
+			const size			 = req.file.size
+			const saveName	 = req.file.filename
+			await File.create({ originName, uploader, size, saveName })
+			return res.status(203).json({ result: true })
+		}
+	} catch(e) {
+		console.error(e)
+		next(e)
+	}
+}
+
+const removeFile = async (req, res, next) => {
+	const { id } = req.body
+	try {
+		const file = await File.findOne({ where: { id } })
+		if(!file) return res.status(403).json({ result: '파일이 존재하지 않아요' })
+		if(shell.exec('rm ./public/files/' + file.dataValues.saveName).code !== 0) {
+			shell.echo('\n\n\n\nError\n\n\n\n')
+			shell.exit(1)
+		}
+		await File.destroy({ where: { id } })
+		return res.status(203).json({ result: true })
+	} catch(e) {
+		console.error(e)
+		next(e)
+	}
+}
+
 module.exports = {
 	getHash,
 	getLog,
+	getFile,
+	uploadFile,
+	removeFile,
 }

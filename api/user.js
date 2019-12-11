@@ -1,6 +1,9 @@
-const { User, Notice, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
+const { File, User, Notice, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
+const mime		= require('mime')
+const path		= require('path')
+const	fs			= require('fs')
 const { hashing } = require('../hashing.js')
 const nodemailer	= require('nodemailer')
 
@@ -237,6 +240,19 @@ const update = async (req, res) => {
 	}
 }
 
+const downloadFile = async (req, res, next) => {
+	const { fName } = req.params
+	try {
+		let file		 = '/workspace/wargame/back/public/files/' + fName
+		res.setHeader('Content-disposition', 'attachment; filename=' + fName )
+    let filestream = fs.createReadStream(file)
+    filestream.pipe(res)
+	} catch(e) {
+		console.error(e)
+		next(e)
+	}
+}
+
 
 module.exports = {
 	login, 
@@ -245,5 +261,6 @@ module.exports = {
 	getAll,
 	update,
 	sendMail,
-	getNotice
+	getNotice,
+	downloadFile,
 }

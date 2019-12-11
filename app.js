@@ -7,6 +7,21 @@ const cors				= require('cors')
 const auth				= require('./auth')
 const bodyParser	= require('body-parser')
 
+
+const hashing = require('./hashing')
+const multer			= require('multer')
+
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => {
+		cb(null, 'public/files/')	
+	},
+	filename: (req, file, cb) => {
+		cb(null, hashing.hashing(file.originalname + Date.now()) + path.extname(file.originalname))
+	}
+})
+
+const upload = multer({ storage: storage });
+
 const indexRouter = require('./routes/index')
 require('dotenv').config()
 
@@ -44,9 +59,13 @@ app
 
 .use(log.logging())
 
+
+
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
+.get('/download/:fName', /*auth.ensureAuth('user'),*/ user.downloadFile) // 다운로드 권한 추가하기
+
 
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)
@@ -54,6 +73,8 @@ app
 
 .get('/notice', notice.get)
 .post('/notice/create', auth.ensureAuth('admin'), notice.create)
+.put('/notice/update',	auth.ensureAuth('admin'), notice.update)
+.get('/notice/remove/:id', auth.ensureAuth('admin'), notice.remove)
 
 .post('/manage/tag/create',  auth.ensureAuth('admin'), tag.createTag)
 .put('/manage/tag/update',	 auth.ensureAuth('admin'), tag.updateTag)
@@ -62,10 +83,15 @@ app
 .put('/manage/prob/visible', auth.ensureAuth('admin'), prob.visibleProb)
 .put('/manage/prob/:id',		 auth.ensureAuth('admin'), prob.updateProb)
 
-.post('/manage/hash', auth.ensureAuth('admin'), admin.getHash)
+.post('/manage/hash',		auth.ensureAuth('admin'), admin.getHash)
 .post('/manage/log',		auth.ensureAuth('admin'), admin.getLog)
+.post('/manage/file/upload', auth.ensureAuth('admin'), upload.single('file'), admin.uploadFile)
+.put('/manage/file/remove', auth.ensureAuth('admin'), admin.removeFile)
+.get('/manage/file', auth.ensureAuth('admin'), admin.getFile)
 
-.put('/user/:uid',						 auth.ensureAuth('admin'), user.update)
+
+
+.put('/user/:uid',			auth.ensureAuth('admin'), user.update)
 
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
 .post('/probs',			auth.ensureAuth('user'), prob.getProbs)

@@ -17,10 +17,13 @@ db.Tag		= require('./tag')(sequelize, Sequelize)
 db.Log		= require('./log')(sequelize, Sequelize)
 db.Auth		= require('./auth')(sequelize, Sequelize)
 db.Notice = require('./notice')(sequelize, Sequelize)
-
+db.File		= require('./file')(sequelize, Sequelize)
 db.Item					= require('./item')(sequelize, Sequelize)
 db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
 db.Inventory		= require('./inventory')(sequelize, Sequelize)
+
+db.User.hasMany(db.File,		{ foreignKey: 'uploader', sourceKey: 'uid' })
+db.File.belongsTo(db.User,	{ foreignKey: 'uploader', sourceKey: 'uid' })
 
 db.User.hasMany(db.Notice,		{ foreignKey: 'author', sourceKey: 'uid' })
 db.Notice.belongsTo(db.User,	{ foreignKey: 'author', sourceKey: 'uid' })
@@ -30,6 +33,9 @@ db.Prob.belongsTo(db.User, { foreignKey: 'author', sourceKey: 'uid'})
 
 db.Tag.hasMany(db.Prob,		 { foreignKey: 'tagId',  sourceKey: 'id'})
 db.Prob.belongsTo(db.Tag,  { foreignKey: 'tagId',  sourceKey: 'id'})
+
+db.File.hasMany(db.Prob,		 { foreignKey: 'fileId', sourceKey: 'id' })
+db.Prob.belongsTo(db.File, { foreignKey: 'fileId', sourceKey: 'id' })
 
 db.User.hasMany(db.Auth,	 { foreignKey: 'solver', sourceKey: 'uid' })
 db.Auth.belongsTo(db.User, { foreignKey: 'solver', sourceKey: 'uid' })

@@ -1,4 +1,4 @@
-const { Inventory, Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
+const { File,Inventory, Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
 
 
 const getProbs = async (req, res) => {
@@ -60,15 +60,43 @@ const getProbs = async (req, res) => {
 
 const getProb = async(req, res, next) => {
 	const { id } = req.params
+	const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
 	if(!id) return res.status(404).json({ error : '문제를 찾을 수 없음' })
-	const prob = await Prob.findOne({ where: { id }, paranoid: false })
+	let prob = await Prob.findOne({ where: { id }, paranoid: false })
 	if(!prob) return res.status(404).json({ error: '문제를 찾을 수 없음' })
+	if(prob.dataValues.fileId) {
+		if(authority.dataValues.level == 'chore')
+			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, paranoid: false, include: [{ model: Prob, required: true, where: { id }, paranoid: false }] })
+		else
+			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, attributes: ['saveName', 'size'], 
+						include: [{ model: Prob, required: true, where: { id }, attributes: ['id', 'title', 'description', 'score', 'author', 'src', 'createdAt', 'updatedAt', 'tagId'] }] })
+		prob.dataValues.file = {}
+		prob.dataValues.file.id					= prob.dataValues.id
+		prob.dataValues.file.originName	= prob.dataValues.originName
+		prob.dataValues.file.saveName		= prob.dataValues.saveName
+		prob.dataValues.file.size				= prob.dataValues.size
+		prob.dataValues.file.createdAt	= prob.dataValues.createdAt
+		prob.dataValues.file.updatedAt	= prob.dataValues.updatedAt
+		prob.dataValues.file.deletedAt	= prob.dataValues.deletedAt
+		prob.dataValues.file.uploader	  = prob.dataValues.uploader
+		prob.dataValues.id = prob.dataValues.probs[0].id
+		prob.dataValues.title = prob.dataValues.probs[0].title
+		prob.dataValues.description = prob.dataValues.probs[0].description
+		prob.dataValues.score	 = prob.dataValues.probs[0].score
+		prob.dataValues.author = prob.dataValues.probs[0].author
+		prob.dataValues.src = prob.dataValues.probs[0].src
+		prob.dataValues.createdAt = prob.dataValues.probs[0].createdAt
+		prob.dataValues.updatedAt = prob.dataValues.probs[0].updatedAt
+		prob.dataValues.tagId = prob.dataValues.probs[0].tagId
+		delete prob.dataValues.probs
+		/* zz 나중에 수정 zzz */
+	}
 	return res.status(201).json({ prob })
 }
 
 
 const createProb = async (req, res, next) => {
-	const { title, description, flag, author, score, tagId, isOpen } = req.body // tags는 객체 형태로 옴
+	const { title, description, flag, author, score, tagId, isOpen, fileId, src } = req.body // tags는 객체 형태로 옴
 
 	try {
 		// 문제 생성
@@ -76,7 +104,7 @@ const createProb = async (req, res, next) => {
 		if(isOpen == false)
 			deletedAt = new Date()
 		const prob = await Prob.create({
-			title, description, flag, author, tagId, score, deletedAt
+			title, description, flag, author, tagId, score, deletedAt, fileId, src
 		}) 
 	} catch (e) {
 		console.error(e)
@@ -87,7 +115,7 @@ const createProb = async (req, res, next) => {
 
 const updateProb = async (req, res, next) => {
 	const id = req.params.id
-	const { title, description, flag, author, score, tagId, isOpen } = req.body
+	const { title, description, flag, author, score, tagId, isOpen, fileId, src } = req.body
 	// author는 외래 키이므로 디비에 어드민으로 존재하지 않는 경우 예외 처리 해야함
 	try {
 		if(isOpen == true)	// 문제를 열 경우 deleteAt = null
@@ -95,7 +123,7 @@ const updateProb = async (req, res, next) => {
 		const prob = await Prob.findOne({ where: { id }, paranoid: false })
 		if(!prob) return res.status(404).json({ error : '존재하지 않는 문제 ' })
 		if(title)
-			Prob.update({ title, description, flag, author, score, tagId }, { where: { id }, paranoid: false })	
+			Prob.update({ title, description, flag, author, score, tagId, fileId, src }, { where: { id }, paranoid: false })	
 			// 문제 업데이트
 		if(isOpen == false) // 문제를 닫을 경우 수정 후 닫기 위해 destroy 나중에 함
 			Prob.destroy({ where: { id } })
