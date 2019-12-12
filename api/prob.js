@@ -69,7 +69,7 @@ const getProb = async(req, res, next) => {
 			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, paranoid: false, include: [{ model: Prob, required: true, where: { id }, paranoid: false }] })
 		else
 			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, attributes: ['saveName', 'size'], 
-						include: [{ model: Prob, required: true, where: { id }, attributes: ['id', 'title', 'description', 'score', 'author', 'src', 'createdAt', 'updatedAt', 'tagId'] }] })
+						include: [{ model: Prob, required: true, where: { id }, attributes: ['id', 'title', 'description', 'score', 'author', 'src', 'createdAt', 'updatedAt', 'tagId', 'fileId' ] }] })
 		prob.dataValues.file = {}
 		prob.dataValues.file.id					= prob.dataValues.id
 		prob.dataValues.file.originName	= prob.dataValues.originName
@@ -88,6 +88,7 @@ const getProb = async(req, res, next) => {
 		prob.dataValues.createdAt = prob.dataValues.probs[0].createdAt
 		prob.dataValues.updatedAt = prob.dataValues.probs[0].updatedAt
 		prob.dataValues.tagId = prob.dataValues.probs[0].tagId
+		prob.dataValues.fileId = prob.dataValues.probs[0].fileId
 		delete prob.dataValues.probs
 		/* zz 나중에 수정 zzz */
 	}
@@ -151,8 +152,8 @@ const visibleProb = async (req, res, next) => {
 }
 const authProb = async(req, res) => {
 	const { id } = req.params
-	const body = req.body
-
+	
+	console.log(req.body)
 	const scores = await Auth.findAll({ 
 		where: { solver: req.user.id, isCorrect: 1 },
 		include: [
@@ -175,7 +176,7 @@ const authProb = async(req, res) => {
 						return res.status(201).json({ result: 'Already Solved and Incorrect!' })
 				}
 				if(prob.dataValues.flag === req.body.flag) {
-					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true })
+					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true, flag: req.body.rFlag })
 					/* 랜덤 아이템 */
 					let lottery		= (Math.random() * 100).toFixed(1)
 					let randomBox	= 0
@@ -194,7 +195,7 @@ const authProb = async(req, res) => {
 					
 					return res.status(201).json({ result: 'Correct!' })
 				} else {
-					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false })
+					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false, flag: req.body.rFlag })
 					return res.status(201).json({ result: 'Incorrect' })
 				}
 			}
