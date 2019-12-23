@@ -21,6 +21,10 @@ db.File		= require('./file')(sequelize, Sequelize)
 db.Item					= require('./item')(sequelize, Sequelize)
 db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
 db.Inventory		= require('./inventory')(sequelize, Sequelize)
+db.Shop					= require('./shop')(sequelize, Sequelize)
+
+db.Item.hasMany(db.Shop,	{ foreignKey: 'pdCode', sourceKey: 'id' })
+db.Shop.belongsTo(db.Item,{ foreignKey: 'pdCode', sourceKey: 'id' })
 
 db.User.hasMany(db.File,		{ foreignKey: 'uploader', sourceKey: 'uid' })
 db.File.belongsTo(db.User,	{ foreignKey: 'uploader', sourceKey: 'uid' })

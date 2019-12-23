@@ -34,6 +34,7 @@ const admin	 = require('./api/admin')
 const log		 = require('./api/log')
 const item	 = require('./api/item')
 const notice = require('./api/notice')
+const shop	 = require('./api/shop')
 
 const app = express()
 sequelize.sync()
@@ -60,70 +61,76 @@ app
 .use(log.logging())
 
 
-
+/* 유저 정보 열람 */
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
-.get('/download/:fName', /*auth.ensureAuth('user'),*/ user.downloadFile) // 다운로드 권한 추가하기
 
-
+/* 로그인, 가입, 비밀번호 분실 관련 */
 .post('/user/login',  user.login)
 .post('/user/join',   user.join)
 .post('/user/sendMail',   user.sendMail)
 
+
+/* 공지사항 관련 */
 .get('/notice', notice.get)
 .post('/notice/create', auth.ensureAuth('admin'), notice.create)
 .put('/notice/update',	auth.ensureAuth('admin'), notice.update)
 .get('/notice/remove/:id', auth.ensureAuth('admin'), notice.remove)
 
+/* 대회 문제 분야 */
+.get('/tags',				auth.ensureAuth('user'), tag.getTags)
 .post('/manage/tag/create',  auth.ensureAuth('admin'), tag.createTag)
 .put('/manage/tag/update',	 auth.ensureAuth('admin'), tag.updateTag)
 
+/* 문제 관련 */
 .post('/manage/prob/create', auth.ensureAuth('admin'), prob.createProb)
 .put('/manage/prob/visible', auth.ensureAuth('admin'), prob.visibleProb)
 .put('/manage/prob/:id',		 auth.ensureAuth('admin'), prob.updateProb)
+.post('/probs',			auth.ensureAuth('user'), prob.getProbs)
+.get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
+.post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
 
+/* 해싱, 로그, 유저 수정 */
 .post('/manage/hash',		auth.ensureAuth('admin'), admin.getHash)
 .post('/manage/log',		auth.ensureAuth('admin'), admin.getLog)
+.put('/user/:uid',			auth.ensureAuth('admin'), user.update)
+
+/* 파일 관련 */
 .post('/manage/file/upload', auth.ensureAuth('admin'), upload.single('file'), admin.uploadFile)
 .put('/manage/file/remove', auth.ensureAuth('admin'), admin.removeFile)
 .get('/manage/file', auth.ensureAuth('admin'), admin.getFile)
+.get('/download/:fName', /*auth.ensureAuth('user'),*/ user.downloadFile) // 다운로드 권한 추가하기
 
-
-
-.put('/user/:uid',			auth.ensureAuth('admin'), user.update)
-
-.get('/tags',				auth.ensureAuth('user'), tag.getTags)
-.post('/probs',			auth.ensureAuth('user'), prob.getProbs)
-.get('/probs/:id',	auth.ensureAuth('user'), prob.getProb)
-
-.post('/auth/:id',	auth.ensureAuth('user'), prob.authProb)
-
+/* 아이템 관련 */
 .get('/item/:uid',				auth.ensureAuth('user'), item.getItems)
 .post('/item/equip/:uid', auth.ensureAuth('user'), item.equipItem)
 .post('/item/box',				auth.ensureAuth('user'), item.useBox)
 
+/* 상점 관련 */
+.get('/shop/:id', auth.ensureAuth('user'), shop.getProduct)
+.get('/shop',	auth.ensureAuth('user'), shop.get)
+.post('/manage/shop/create', auth.ensureAuth('admin'), shop.create)
+.post('/manage/shop/update/:id', auth.ensureAuth('admin'), shop.update)
+.get('/shop/buy/:pId', auth.ensureAuth('user'), shop.buy)
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-	console.log('error!');
-  next(createError(404));
-});
+/* 404 에러 처리 */
+app.use((req, res, next) => {
+	console.log('\n\nERROR\n\n')
+  next(createError(404))
+})
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+/* 에러 핸들러 */
+
+app.use((err, req, res, next) => {
+	res.locals.message = err.message
+	res.locals.error = req.app.get('env') === 'development' ? err : {}
+	res.status(err.status || 500)
+	res.render('error')
+})
 
 app.listen(app.get('port'), () => {
 	console.log(app.get('port'), 'port server')
 })
-
-//module.exports = app;
 
