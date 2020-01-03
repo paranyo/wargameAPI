@@ -22,6 +22,8 @@ db.Item					= require('./item')(sequelize, Sequelize)
 db.ItemCategory	=	require('./itemCategory')(sequelize, Sequelize)
 db.Inventory		= require('./inventory')(sequelize, Sequelize)
 db.Shop					= require('./shop')(sequelize, Sequelize)
+db.Auction = require('./auction')(sequelize, Sequelize)
+db.Bid		 = require('./bid')(sequelize, Sequelize)
 
 db.Item.hasMany(db.Shop,	{ foreignKey: 'pdCode', sourceKey: 'id' })
 db.Shop.belongsTo(db.Item,{ foreignKey: 'pdCode', sourceKey: 'id' })
@@ -56,5 +58,18 @@ db.User.hasMany(db.Inventory,		{	foreginKey: 'userId',		sourceKey: 'uid' })
 db.Inventory.belongsTo(db.User,	{ foreginKey: 'userId',		sourceKey: 'uid' })
 db.ItemCategory.hasMany(db.Inventory,		{ foreignKey: 'cCode', sourceKey: 'id' })
 db.Inventory.belongsTo(db.ItemCategory,	{ foreignKey: 'cCode', sourceKey: 'id' })
+
+db.User.hasMany(db.Auction,		{ foreignKey: 'owner', sourceKey: 'uid', as: 'owner' })
+db.Auction.belongsTo(db.User,	{ foreignKey: 'owner', sourceKey: 'uid' })
+db.User.hasMany(db.Auction,		{ foreignKey: 'winner', sourceKey: 'uid', as: 'winner'  })
+db.Auction.belongsTo(db.User,	{ foreignKey: 'winner', sourceKey: 'uid' })
+db.Inventory.hasMany(db.Auction,	 { foreignKey: 'itemId', sourceKey: 'id' })
+db.Auction.belongsTo(db.Inventory, { foreignKey: 'itemId', sourceKey: 'id' })
+
+db.User.hasMany(db.Bid,		{ foreignKey: 'bidder', sourceKey: 'uid' })
+db.Bid.belongsTo(db.User, { foreignKey: 'bidder', sourceKey: 'uid' })
+db.Auction.hasMany(db.Bid,	 { foreignKey: 'aId', sourceKey: 'id' })
+db.Bid.belongsTo(db.Auction, { foreignKey: 'aId', sourceKey: 'id' })
+
 
 module.exports = db

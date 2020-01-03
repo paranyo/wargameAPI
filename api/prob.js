@@ -103,7 +103,7 @@ const createProb = async (req, res, next) => {
 		// 문제 생성
 		let deletedAt = null
 		if(isOpen == false)
-			deletedAt = new Date()
+			deletedAt = time()
 		const prob = await Prob.create({
 			title, description, flag, author, tagId, score, deletedAt, fileId, src
 		}) 

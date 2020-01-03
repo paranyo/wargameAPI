@@ -7,7 +7,6 @@ const cors				= require('cors')
 const auth				= require('./auth')
 const bodyParser	= require('body-parser')
 
-
 const hashing = require('./hashing')
 const multer			= require('multer')
 
@@ -16,7 +15,7 @@ const storage = multer.diskStorage({
 		cb(null, 'public/files/')	
 	},
 	filename: (req, file, cb) => {
-		cb(null, hashing.hashing(file.originalname + Date.now()) + path.extname(file.originalname))
+		cb(null, hashing.hashing(file.originalname + time() + path.extname(file.originalname)))
 	}
 })
 
@@ -35,6 +34,10 @@ const log		 = require('./api/log')
 const item	 = require('./api/item')
 const notice = require('./api/notice')
 const shop	 = require('./api/shop')
+const auction = require('./api/auction')
+
+const webSocket = require('./socket')
+const checkBid	= require('./checkBid')
 
 const app = express()
 sequelize.sync()
@@ -103,7 +106,7 @@ app
 .get('/download/:fName', /*auth.ensureAuth('user'),*/ user.downloadFile) // 다운로드 권한 추가하기
 
 /* 아이템 관련 */
-.get('/item/:uid',				auth.ensureAuth('user'), item.getItems)
+.get('/item',				auth.ensureAuth('user'), item.getItems)
 .post('/item/equip/:uid', auth.ensureAuth('user'), item.equipItem)
 .post('/item/box',				auth.ensureAuth('user'), item.useBox)
 
@@ -112,7 +115,14 @@ app
 .get('/shop',	auth.ensureAuth('user'), shop.get)
 .post('/manage/shop/create', auth.ensureAuth('admin'), shop.create)
 .post('/manage/shop/update/:id', auth.ensureAuth('admin'), shop.update)
+.put('/manage/shop/remove/:id', auth.ensureAuth('admin'), shop.remove)
 .get('/shop/buy/:pId', auth.ensureAuth('user'), shop.buy)
+
+/* 경매장 */
+.get('/auction', auth.ensureAuth('user'), auction.get)
+.post('/auction/create', auth.ensureAuth('user'), auction.create)
+.post('/auction/bid', auth.ensureAuth('user'), auction.bidding)
+
 
 /* 404 에러 처리 */
 app.use((req, res, next) => {
@@ -130,7 +140,9 @@ app.use((err, req, res, next) => {
 	res.render('error')
 })
 
-app.listen(app.get('port'), () => {
+const server = app.listen(app.get('port'), () => {
 	console.log(app.get('port'), 'port server')
 })
 
+webSocket(server, app)
+checkBid(app)

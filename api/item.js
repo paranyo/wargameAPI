@@ -2,11 +2,8 @@ const { User, Inventory, Item, Sequelize: { Op }, sequelize } = require('../mode
 
 
 const getItems = async (req, res) => {
-	const { uid } = req.params
-	if(uid !== req.user.id) 
-		return res.status(403).json({ error: '실패' })
 	try {
-		items = await Inventory.findAll({ where: { userId: uid },
+		items = await Inventory.findAll({ where: { userId: req.user.id },
 			include: [{ model: Item, required: true, attributes: ['name', 'cCode'], }]	
 		})
 		return res.status(201).json({ items })
