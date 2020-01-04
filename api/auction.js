@@ -70,7 +70,7 @@ const create = async (req, res, next) => {
 		req.app.get('io').to('/auction').emit('newAuction', auctionItem)
 		return res.status(203).json({ result: '등록하였습니다' })
 	} catch (e) {
-		console.error(e)
+		console.log('\n\n 에러 발생 \n\n')
 		next(e)
 	}
 }

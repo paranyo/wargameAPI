@@ -1,4 +1,4 @@
-const { File, Auth, Log, Sequelize: { Op } } = require('../models')
+const { ErrorLog, File, Auth, Log, Sequelize: { Op } } = require('../models')
 const path = require('path')
 const shell = require('shelljs')
 
@@ -16,6 +16,8 @@ const getLog = async (req, res, next) => {
 			logs = await Auth.findAll()
 		else if(type == 'all')
 			logs = await Log.findAll()
+		else if(type == 'error')
+			logs = await ErrorLog.findAll()
 		return res.status(201).json({ logs })
 	} catch(e) {
 		console.error(e)

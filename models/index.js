@@ -14,7 +14,6 @@ db.Sequelize = Sequelize
 db.User		= require('./user')(sequelize, Sequelize)
 db.Prob		= require('./prob')(sequelize, Sequelize)
 db.Tag		= require('./tag')(sequelize, Sequelize)
-db.Log		= require('./log')(sequelize, Sequelize)
 db.Auth		= require('./auth')(sequelize, Sequelize)
 db.Notice = require('./notice')(sequelize, Sequelize)
 db.File		= require('./file')(sequelize, Sequelize)
@@ -24,6 +23,9 @@ db.Inventory		= require('./inventory')(sequelize, Sequelize)
 db.Shop					= require('./shop')(sequelize, Sequelize)
 db.Auction = require('./auction')(sequelize, Sequelize)
 db.Bid		 = require('./bid')(sequelize, Sequelize)
+
+db.Log			= require('./log')(sequelize, Sequelize)
+db.ErrorLog = require('./errorLog')(sequelize, Sequelize)
 
 db.Item.hasMany(db.Shop,	{ foreignKey: 'pdCode', sourceKey: 'id' })
 db.Shop.belongsTo(db.Item,{ foreignKey: 'pdCode', sourceKey: 'id' })

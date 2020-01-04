@@ -21,7 +21,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const indexRouter = require('./routes/index')
 require('dotenv').config()
 
 const sequelize = require('./models').sequelize;
@@ -35,6 +34,8 @@ const item	 = require('./api/item')
 const notice = require('./api/notice')
 const shop	 = require('./api/shop')
 const auction = require('./api/auction')
+
+const saveError = require('./saveError')
 
 const webSocket = require('./socket')
 const checkBid	= require('./checkBid')
@@ -136,8 +137,8 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
 	res.locals.message = err.message
 	res.locals.error = req.app.get('env') === 'development' ? err : {}
-	res.status(err.status || 500)
-	res.render('error')
+	saveError(err)
+	return res.status(500).json({ result: 'error' })
 })
 
 const server = app.listen(app.get('port'), () => {
