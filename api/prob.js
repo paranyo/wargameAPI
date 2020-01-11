@@ -98,15 +98,12 @@ const getProb = async(req, res, next) => {
 
 const createProb = async (req, res, next) => {
 	const { title, description, flag, author, score, tagId, isOpen, fileId, src } = req.body // tags는 객체 형태로 옴
-
 	try {
 		// 문제 생성
 		let deletedAt = null
 		if(isOpen == false)
-			deletedAt = time()
-		const prob = await Prob.create({
-			title, description, flag, author, tagId, score, deletedAt, fileId, src
-		}) 
+			deletedAt = new Date()
+		const prob = await Prob.create({ title, description, flag, author, tagId, score, deletedAt, fileId, src }) 
 	} catch (e) {
 		console.error(e)
 		next(e)

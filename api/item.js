@@ -1,4 +1,4 @@
-const { User, Inventory, Item, Sequelize: { Op }, sequelize } = require('../models')
+const { User, Inventory, Item, Sequelize: { Op, Query }, sequelize } = require('../models')
 
 
 const getItems = async (req, res) => {
@@ -28,6 +28,16 @@ const equipItem = async (req, res) => {
 	return res.status(201).json({ items })
 }
 
+const clearEquip = async (req, res, next) => {
+	if(!req.user.id)
+		return res.status(403).json({ result: '실패' })
+	let query = 'UPDATE inventories SET isEquip=0 WHERE userId=:userId AND isEquip=1 AND cCode!=99 AND itemCode > 100000';
+	let values = { userId: req.user.id }
+	await sequelize.query(query, { replacements: values }).spread((result, meta) => {
+		return res.status(203).json({ result: '성공' })
+	}, (err) => { next(err) })
+}
+
 const useBox = async (req, res) => {
 	const { uid, id, idx } = req.body
 	if(uid !== req.user.id || !id) return res.status(403).json({ result: '실패' })
@@ -35,10 +45,24 @@ const useBox = async (req, res) => {
 		await Inventory.findOne({ where: { itemCode: req.body.id, userId: uid, id: idx } }).then(async (box) => {
 			if(box) {
 				let cCode;
-				if(box.dataValues.itemCode == 5150000)			cCode = 1
-				else if(box.dataValues.itemCode == 5152000)	cCode = 2
-				else if(box.dataValues.itemCode	== 4000703) cCode = box.dataValues.itemCode
-				else if(box.dataValues.itemCode	== 1162000) cCode = box.dataValues.itemCode
+				if(box.dataValues.itemCode == 5150000)			cCode = 1		// 헤어
+				else if(box.dataValues.itemCode == 5152000)	cCode = 2		// 눈
+				else if(box.dataValues.itemCode == 5680502)	cCode = 3		// 얼굴 장식
+				else if(box.dataValues.itemCode == 2434838)	cCode = 4		// 눈 장식
+				else if(box.dataValues.itemCode == 2434597)	cCode = 5		// 귀고리
+				else if(box.dataValues.itemCode == 2630442)	cCode = 8		// 모자
+				else if(box.dataValues.itemCode == 2439282)	cCode = 9		// 망토
+				else if(box.dataValues.itemCode == 5069001)	cCode = 10	// 상의
+				else if(box.dataValues.itemCode == 2434285)	cCode = 11	// 장갑
+				else if(box.dataValues.itemCode == 2433080)	cCode = 12	// 한벌옷
+				else if(box.dataValues.itemCode == 5069000)	cCode = 13	// 하의
+				else if(box.dataValues.itemCode == 5530113)	cCode = 14	// 방패
+				else if(box.dataValues.itemCode == 4001000)	cCode = 15	// 신발
+				else if(box.dataValues.itemCode == 2431937)	cCode = 16	// 한손 무기
+				else if(box.dataValues.itemCode == 2431941)	cCode = 17	// 두손 무기
+				else if(box.dataValues.itemCode == 2435004)	cCode = 18	// 의자
+				else if(box.dataValues.itemCode	== 4000703) cCode = box.dataValues.itemCode	//
+				else if(box.dataValues.itemCode	== 1162000) cCode = box.dataValues.itemCode	//
 				else	return res.status(503).json({ result: '비정상 접근입니다.' })
 				await box.destroy()
 				if(cCode < 100) {
@@ -82,5 +106,6 @@ const useBox = async (req, res) => {
 module.exports = {
 	getItems,
 	equipItem,
+	clearEquip,
 	useBox,
 }

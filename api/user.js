@@ -202,6 +202,17 @@ const get = async (req, res) => {
 	user.dataValues.items = items
 	return res.status(201).json({ user })
 }
+
+const getCorrect = async (req, res, next) => {
+	try {
+		const { id } = req.user
+		const user = await Auth.findAll({ where: { solver: id, isCorrect: 1 }, attributes: ['id', 'createdAt'],
+			include: [{model: Prob, required: true, attributes: ['id', 'title', 'description', 'src', 'score', 'createdAt', 'author', 'tagId', 'fileId'] }] })
+		return res.status(201).json({ user })
+	} catch (e) {
+		next(e)
+	}
+}
 /* Need! */
 /* 나중에 user.pw 등 랭크에 필요 없는 정보는 제거 후 표출하거나 디비단에서 받아오지 않아야 함*/
 /* 일단 유저 이름과 레벨만 띄워주지만 이것도 나중에 점수 등으로 추가 정보를 보여주어야 함 */
@@ -259,6 +270,7 @@ module.exports = {
 	join,
 	get,
 	getAll,
+	getCorrect,
 	update,
 	sendMail,
 	getNotice,

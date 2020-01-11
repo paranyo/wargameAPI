@@ -1,4 +1,4 @@
-const { ErrorLog, File, Auth, Log, Sequelize: { Op } } = require('../models')
+const { Setting, ErrorLog, File, Auth, Log, Sequelize: { Op } } = require('../models')
 const path = require('path')
 const shell = require('shelljs')
 
@@ -57,7 +57,39 @@ const removeFile = async (req, res, next) => {
 		await File.destroy({ where: { id } })
 		return res.status(203).json({ result: true })
 	} catch(e) {
-		console.error(e)
+		next(e)
+	}
+}
+
+const setSetting = async (req, res, next) => {
+	const { name, value } = req.body
+	if(!name || !value) return res.status(403).json({ result: false })
+	try {
+		await Setting.create({ name, value })
+		return res.status(203).json({ result: true })
+	} catch(e) {
+		next(e)
+	}
+}
+
+const getSetting = async (req, res, next) => {
+	try {
+		let settings = await Setting.findAll({ attributes: ['id','name', 'value'] })
+		if(settings) return res.status(203).json({ settings })
+		else				return res.status(403).json({ result: false })
+	} catch(e) {
+		next(e)
+	}
+
+}
+
+const updateSetting = async (req, res, next) => {
+	const { id, value } = req.body
+	if(!id || !value) return res.status(403).json({ result: false })
+	try {
+		await Setting.update({ value }, { where: { id } })
+		return res.status(203).json({ result: true })
+	} catch(e) {
 		next(e)
 	}
 }
@@ -68,4 +100,7 @@ module.exports = {
 	getFile,
 	uploadFile,
 	removeFile,
+	setSetting,
+	getSetting,
+	updateSetting,
 }

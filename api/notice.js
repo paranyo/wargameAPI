@@ -10,16 +10,15 @@ const get = async (req, res, next) => {
 		uid  = jwt.verify(req.headers.authorization, process.env.JWT_SECRET)['id']
 	try {
 		let authority = ''
-		if(uid !== '')
+		if(uid != '') {
 			authority = await User.findOne({ attributes: ['level'], where: { uid } })
-		if(authority.dataValues.level == 'chore')
-			notice = await Notice.findAll({ paranoid: false, attributes: ['id', 'title', 'description', 'createdAt', 'deletedAt', 'author'] })
-		else
+			if(authority.dataValues.level == 'chore') 
+				notice = await Notice.findAll({ paranoid: false, attributes: ['id', 'title', 'description', 'createdAt', 'deletedAt', 'author'] })
+		} else {
 			notice = await Notice.findAll({ attributes: ['id', 'title', 'description', 'createdAt', 'author'] })
+		}
 		return res.status(201).json(notice)
 	} catch (e) {
-		/* 에러 토쓰 */
-		console.error(e)
 		next(e)
 	}
 }
@@ -37,7 +36,6 @@ const create = async (req, res, next) => {
 		return res.status(201).json({ result : 'true' })
 	} catch (e) {
 		/* 에러 토쓰 */
-		console.error(e)
 		next(e)
 	}
 }

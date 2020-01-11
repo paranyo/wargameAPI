@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 		cb(null, 'public/files/')	
 	},
 	filename: (req, file, cb) => {
-		cb(null, hashing.hashing(file.originalname + time() + path.extname(file.originalname)))
+		cb(null, hashing.hashing(file.originalname + new Date() + path.extname(file.originalname)))
 	}
 })
 
@@ -68,6 +68,7 @@ app
 /* 유저 정보 열람 */
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
+.get('/myCorrect',	auth.ensureAuth('user'), user.getCorrect)
 .get('/user',				auth.ensureAuth('user'), user.getAll)
 
 /* 로그인, 가입, 비밀번호 분실 관련 */
@@ -109,6 +110,7 @@ app
 /* 아이템 관련 */
 .get('/item',				auth.ensureAuth('user'), item.getItems)
 .post('/item/equip/:uid', auth.ensureAuth('user'), item.equipItem)
+.get('/item/clearEquip', auth.ensureAuth('user'), item.clearEquip)
 .post('/item/box',				auth.ensureAuth('user'), item.useBox)
 
 /* 상점 관련 */
@@ -118,6 +120,11 @@ app
 .post('/manage/shop/update/:id', auth.ensureAuth('admin'), shop.update)
 .put('/manage/shop/remove/:id', auth.ensureAuth('admin'), shop.remove)
 .get('/shop/buy/:pId', auth.ensureAuth('user'), shop.buy)
+
+.get('/setting',	auth.ensureAuth('user'), admin.getSetting)
+.post('/manage/setting/create', auth.ensureAuth('admin'), admin.setSetting)
+.post('/manage/setting/update', auth.ensureAuth('admin'), admin.updateSetting)
+
 
 /* 경매장 */
 .get('/auction', auth.ensureAuth('user'), auction.get)
@@ -138,7 +145,12 @@ app.use((err, req, res, next) => {
 	res.locals.message = err.message
 	res.locals.error = req.app.get('env') === 'development' ? err : {}
 	saveError(err)
-	return res.status(500).json({ result: 'error' })
+	switch(err.original.code) {
+		case 'ER_NO_REFERENCED_ROW_2':
+			return res.status(400).json({ message: err.fields + ' 필드의 값을 확인하세요' })
+		case 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD':
+			return res.status(400).json({ message: '부적절한 자료형을 확인하세요.' })
+	}
 })
 
 const server = app.listen(app.get('port'), () => {

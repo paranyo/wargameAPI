@@ -28,14 +28,14 @@ const auth = {
 						return res.status(401).json({ error: '비허가 행동' })
 					}
 				} catch (e) {
-					res.status(401)
+					res.status(401).json({ result: '연동 실패' })
 					throw e
 				}
 			} else {
 				try {
 					req.user = this.verify(authorization)
 				} catch (e) {
-					res.status(401)
+					res.status(401).json({ result: '연동 실패' })
 					throw e
 				}
 				next()
@@ -43,7 +43,11 @@ const auth = {
 		}
 	},
 	verify(token) {
-		return jwt.verify(token, secret)
+		try {
+			return jwt.verify(token, secret)
+		} catch(e) {
+			console.error(e)
+		}
 	}
 }
 
