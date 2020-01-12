@@ -14,6 +14,8 @@ const get = async (req, res, next) => {
 			authority = await User.findOne({ attributes: ['level'], where: { uid } })
 			if(authority.dataValues.level == 'chore') 
 				notice = await Notice.findAll({ paranoid: false, attributes: ['id', 'title', 'description', 'createdAt', 'deletedAt', 'author'] })
+			else
+				notice = await Notice.findAll({ attributes: ['id', 'title', 'description', 'createdAt', 'author'] })
 		} else {
 			notice = await Notice.findAll({ attributes: ['id', 'title', 'description', 'createdAt', 'author'] })
 		}
@@ -41,9 +43,15 @@ const create = async (req, res, next) => {
 }
 
 const update = async (req, res, next) => {
-	const { id, title, description } = req.body
+	const { id, title, description, isOpen } = req.body
 	try {
-		await Notice.update({ title, description }, { where: { id } })
+		if(isOpen == true)
+			await Notice.restore({ where: { id } })
+		const notice = await Notice.findOne({ where: { id }, paranoid: false })
+		if(!notice) return res.status(404).json({ result: '존재하지 않는 게시글입니다.' })
+		await Notice.update({ title, description }, { where: { id }, paranoid: false })
+		if(isOpen == false)
+			await Notice.destroy({ where: { id } })
 		return res.status(201).json({ result: 'true' })
 	}	catch (e) {
 		console.error(e)
@@ -51,19 +59,9 @@ const update = async (req, res, next) => {
 	}
 }
 
-const remove = async (req, res, next) => {
-	try {
-		await Notice.destroy({ where: { id: req.params.id } })
-		return res.status(203).json({ result: 'true '})
-	} catch (e) {
-		console.error(e)
-		next(e)
-	}
-}
 
 module.exports = {
 	get,
 	create,
 	update,
-	remove
 }

@@ -11,8 +11,8 @@ const log = {
 			const token			=	req.headers['authorization']
 			if(req.body.pw)
 				req.body.pw = hashing(req.body.pw)
-			else if(req.body.flag)
-				req.body.flag = hashing(req.body.flag)
+	//		else if(req.body.flag)
+		//		req.body.flag = hashing(req.body.flag)
 
 			const data = JSON.stringify(req.body)
 

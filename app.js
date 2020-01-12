@@ -7,7 +7,7 @@ const cors				= require('cors')
 const auth				= require('./auth')
 const bodyParser	= require('body-parser')
 
-const hashing = require('./hashing')
+const { hashing } = require('./hashing')
 const multer			= require('multer')
 
 const storage = multer.diskStorage({
@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 		cb(null, 'public/files/')	
 	},
 	filename: (req, file, cb) => {
-		cb(null, hashing.hashing(file.originalname + new Date() + path.extname(file.originalname)))
+		cb(null, hashing(file.originalname + new Date()) + path.extname(file.originalname))
 	}
 })
 
@@ -81,7 +81,6 @@ app
 .get('/notice', notice.get)
 .post('/notice/create', auth.ensureAuth('admin'), notice.create)
 .put('/notice/update',	auth.ensureAuth('admin'), notice.update)
-.get('/notice/remove/:id', auth.ensureAuth('admin'), notice.remove)
 
 /* 대회 문제 분야 */
 .get('/tags',				auth.ensureAuth('user'), tag.getTags)
@@ -121,7 +120,7 @@ app
 .put('/manage/shop/remove/:id', auth.ensureAuth('admin'), shop.remove)
 .get('/shop/buy/:pId', auth.ensureAuth('user'), shop.buy)
 
-.get('/setting',	auth.ensureAuth('user'), admin.getSetting)
+.get('/setting', admin.getSetting)
 .post('/manage/setting/create', auth.ensureAuth('admin'), admin.setSetting)
 .post('/manage/setting/update', auth.ensureAuth('admin'), admin.updateSetting)
 
@@ -144,13 +143,16 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
 	res.locals.message = err.message
 	res.locals.error = req.app.get('env') === 'development' ? err : {}
-	saveError(err)
+	if(err.original.sql)
+		saveError(err)
 	switch(err.original.code) {
 		case 'ER_NO_REFERENCED_ROW_2':
 			return res.status(400).json({ message: err.fields + ' 필드의 값을 확인하세요' })
 		case 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD':
 			return res.status(400).json({ message: '부적절한 자료형을 확인하세요.' })
-	}
+		default:
+			return res.status(400).json({ message: 'error' })
+	} 
 })
 
 const server = app.listen(app.get('port'), () => {

@@ -1,11 +1,11 @@
 const { Setting, ErrorLog, File, Auth, Log, Sequelize: { Op } } = require('../models')
 const path = require('path')
 const shell = require('shelljs')
-
+const { hashing } = require('../hashing')
 const getHash = (req, res, next) => {
 	const { flag } = req.body
 	if(flag)
-		return res.status(201).json({ flag: flag })
+		return res.status(201).json({ flag: hashing(flag) })
 }
 
 const getLog = async (req, res, next) => {

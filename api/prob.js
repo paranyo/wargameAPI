@@ -1,26 +1,25 @@
 const { File,Inventory, Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
-
+const { hashing } = require('../hashing')
 
 const getProbs = async (req, res) => {
 	const { tags } = req.body
 	try {
 		if(req.user) {
 			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
-
 			let tagList = tags ? { where: { tagId: { [Op.in]: tags } } } : {}
-		
 			if(authority.dataValues.level == 'chore') {
 				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },
-					include: [{ model: Prob, required: true, paranoid: false }]
+					include: [{ model: Prob, required: true, paranoid: false }], order: [[Prob, 'createdAt', 'DESC']]
 				})
 			} else { // 나중에 플래그 같은 값은 없애고 보내야함
 				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } }, 
 					include: [
 						{ model: Prob, required: true, 
-							include: [
+	/*						include: [
 							{	model: Auth, required: true, attributes: ['isCorrect'] },
 							{ where : { solver: req.user.id } }
-						]}
+						]*/
+						}
 					]
 				})
 			}
@@ -53,59 +52,71 @@ const getProbs = async (req, res) => {
 			return res.status(201).json({ list })
 		}
 	} catch (e) {
-		console.error(e)
+		console.dir(e)
 		return res.status(403).json({ error: '실패' })
 	}
 }
 
 const getProb = async(req, res, next) => {
-	const { id } = req.params
-	const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
-	if(!id) return res.status(404).json({ error : '문제를 찾을 수 없음' })
-	let prob = await Prob.findOne({ where: { id }, paranoid: false })
-	if(!prob) return res.status(404).json({ error: '문제를 찾을 수 없음' })
-	if(prob.dataValues.fileId) {
-		if(authority.dataValues.level == 'chore')
-			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, paranoid: false, include: [{ model: Prob, required: true, where: { id }, paranoid: false }] })
-		else
-			prob = await File.findOne({ where: { id: prob.dataValues.fileId }, attributes: ['saveName', 'size'], 
-						include: [{ model: Prob, required: true, where: { id }, attributes: ['id', 'title', 'description', 'score', 'author', 'src', 'createdAt', 'updatedAt', 'tagId', 'fileId' ] }] })
-		prob.dataValues.file = {}
-		prob.dataValues.file.id					= prob.dataValues.id
-		prob.dataValues.file.originName	= prob.dataValues.originName
-		prob.dataValues.file.saveName		= prob.dataValues.saveName
-		prob.dataValues.file.size				= prob.dataValues.size
-		prob.dataValues.file.createdAt	= prob.dataValues.createdAt
-		prob.dataValues.file.updatedAt	= prob.dataValues.updatedAt
-		prob.dataValues.file.deletedAt	= prob.dataValues.deletedAt
-		prob.dataValues.file.uploader	  = prob.dataValues.uploader
-		prob.dataValues.id = prob.dataValues.probs[0].id
-		prob.dataValues.title = prob.dataValues.probs[0].title
-		prob.dataValues.description = prob.dataValues.probs[0].description
-		prob.dataValues.score	 = prob.dataValues.probs[0].score
-		prob.dataValues.author = prob.dataValues.probs[0].author
-		prob.dataValues.src = prob.dataValues.probs[0].src
-		prob.dataValues.createdAt = prob.dataValues.probs[0].createdAt
-		prob.dataValues.updatedAt = prob.dataValues.probs[0].updatedAt
-		prob.dataValues.tagId = prob.dataValues.probs[0].tagId
-		prob.dataValues.fileId = prob.dataValues.probs[0].fileId
-		delete prob.dataValues.probs
-		/* zz 나중에 수정 zzz */
+	try {
+		const { id } = req.params
+		const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
+		let prob
+		if(authority.dataValues.level == 'chore') {
+			prob = await Prob.findOne({ where: { id }, paranoid: false })
+		} else {
+			prob = await Prob.findOne({ where: { id } })
+		}
+		if(!prob) return res.status(404).json({ message: 'Not Found Prob' })
+
+		if(prob.dataValues.fileId) {
+			if(authority.dataValues.level == 'chore')
+				prob = await File.findOne({ where: { id: prob.dataValues.fileId }, paranoid: false, include: [{ model: Prob, required: true, where: { id }, paranoid: false }] })
+			else
+				prob = await File.findOne({ where: { id: prob.dataValues.fileId }, attributes: ['saveName', 'size'], 
+							include: [{ model: Prob, required: true, where: { id }, attributes: ['id', 'title', 'description', 'score', 'author', 'src', 'createdAt', 'updatedAt', 'tagId', 'fileId' ] }] })
+			prob.dataValues.file = {}
+			prob.dataValues.file.id					= prob.dataValues.id
+			prob.dataValues.file.originName	= prob.dataValues.originName
+			prob.dataValues.file.saveName		= prob.dataValues.saveName
+			prob.dataValues.file.createdAt	= prob.dataValues.createdAt
+			prob.dataValues.file.uploader	  = prob.dataValues.uploader
+			prob.dataValues.file.size				= prob.dataValues.size
+			prob.dataValues.file.deletedAt	= prob.dataValues.deletedAt
+			prob.dataValues.id = prob.dataValues.probs[0].id
+			prob.dataValues.title = prob.dataValues.probs[0].title
+			prob.dataValues.description = prob.dataValues.probs[0].description
+			prob.dataValues.score	 = prob.dataValues.probs[0].score
+			prob.dataValues.author = prob.dataValues.probs[0].author
+			prob.dataValues.src = prob.dataValues.probs[0].src
+			prob.dataValues.createdAt = prob.dataValues.probs[0].createdAt
+			prob.dataValues.updatedAt = prob.dataValues.probs[0].updatedAt
+			prob.dataValues.tagId = prob.dataValues.probs[0].tagId
+			prob.dataValues.fileId = prob.dataValues.probs[0].fileId
+			if(authority.dataValues.level == 'chore')
+				prob.dataValues.flag = prob.dataValues.probs[0].flag
+			delete prob.dataValues.probs
+			/* zz 나중에 수정 zzz */
+		}
+		return res.status(201).json({ prob })
+	} catch (e) {
+		next(e)
 	}
-	return res.status(201).json({ prob })
 }
 
 
 const createProb = async (req, res, next) => {
-	const { title, description, flag, author, score, tagId, isOpen, fileId, src } = req.body // tags는 객체 형태로 옴
+	const { title, description, flag, author, score, tagId, isOpen, fileId, src } = req.body // tags는 객체 형태로 옴 
 	try {
 		// 문제 생성
 		let deletedAt = null
 		if(isOpen == false)
 			deletedAt = new Date()
-		const prob = await Prob.create({ title, description, flag, author, tagId, score, deletedAt, fileId, src }) 
+		if(!title||!flag||!author||!score||!tagId)
+			return res.status(400).json({ message: '제목, 플래그, 출제자, 점수, 태그는 필수입니다' })
+		const prob = await Prob.create({ title, description, flag: hashing(flag), author, tagId, score, deletedAt, fileId, src }) 
 	} catch (e) {
-		console.error(e)
+		console.dir(e)
 		next(e)
 	}
 	return res.status(201).json({ result : 'true' })
@@ -163,16 +174,17 @@ const authProb = async(req, res) => {
 	})
 	if(req.body.flag) {
 		try {
+			let flag = hashing(req.body.flag)
 			const prob = await Prob.findOne({ where: { id } })
 			if(prob) {
 				const already = await Auth.findOne({ where: { solver: req.user.id, pid: id, isCorrect: 1 } })
 				if(already) {
-					if(prob.dataValues.flag === req.body.flag)
+					if(prob.dataValues.flag === flag)
 						return res.status(201).json({ result: 'Already Solved, But Correct!' })
 					else 
 						return res.status(201).json({ result: 'Already Solved and Incorrect!' })
 				}
-				if(prob.dataValues.flag === req.body.flag) {
+				if(prob.dataValues.flag === flag) {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true, flag: req.body.rFlag })
 					/* 랜덤 아이템 */
 					let lottery		= (Math.random() * 100).toFixed(1)
