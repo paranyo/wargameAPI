@@ -160,8 +160,6 @@ const visibleProb = async (req, res, next) => {
 }
 const authProb = async(req, res) => {
 	const { id } = req.params
-	
-	console.log(req.body)
 	const scores = await Auth.findAll({ 
 		where: { solver: req.user.id, isCorrect: 1 },
 		include: [
@@ -207,6 +205,8 @@ const authProb = async(req, res) => {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false, flag: req.body.rFlag })
 					return res.status(201).json({ result: 'Incorrect' })
 				}
+			} else { // 문제가 없을 경우
+				return res.status(404).json({ message: '문제가 닫혀있거나 찾을 수 없습니다' })
 			}
 		} catch(error) {
 			console.error(error)

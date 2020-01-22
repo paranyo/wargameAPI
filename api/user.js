@@ -1,4 +1,4 @@
-const { File, User, Notice, Prob, Auth, Inventory, Sequelize: { Op } } = require('../models')
+const { Tag, File, User, Notice, Prob, Auth, Inventory, Sequelize: { Op }, sequelize } = require('../models')
 const auth   = require('../auth')
 const crypto = require('crypto')
 const mime		= require('mime')
@@ -205,11 +205,19 @@ const get = async (req, res) => {
 
 const getCorrect = async (req, res, next) => {
 	try {
-		const { id } = req.user
-		const user = await Auth.findAll({ where: { solver: id, isCorrect: 1 }, attributes: ['id', 'createdAt'],
-			include: [{model: Prob, required: true, attributes: ['id', 'title', 'description', 'src', 'score', 'createdAt', 'author', 'tagId', 'fileId'] }] })
-		return res.status(201).json({ user })
+		/*const user = await Auth.findAll({ where: { solver: id, isCorrect: 1 }, attributes: ['id', 'createdAt'],
+			include: [
+				{ model: Prob, required: true, attributes: ['id', 'title', 'description', 'src', 'score', 'createdAt', 'author', 'tagId', 'fileId'] },
+			] 
+		})
+		return res.status(201).json({ user }) */
+		let query = 'SELECT a.id, p.title, p.score, p.id AS pid, t.title AS tag, a.createdAt FROM auths AS a LEFT JOIN probs AS p ON a.pid=p.id LEFT JOIN tags as t ON t.id=p.tagId WHERE a.solver=:solver AND isCorrect=1'
+		let values = { solver: req.user.id  }
+		await sequelize.query(query, { replacements: values }).spread((result, meta) => {
+			return res.status(201).json({ user: result })
+		}, (err) => { console.error(err); next(err) })
 	} catch (e) {
+		console.error(e)
 		next(e)
 	}
 }
