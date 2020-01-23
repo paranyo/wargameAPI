@@ -34,6 +34,7 @@ const item	 = require('./api/item')
 const notice = require('./api/notice')
 const shop	 = require('./api/shop')
 const auction = require('./api/auction')
+const settings = require('./api/settings')
 
 const saveError = require('./saveError')
 
@@ -63,6 +64,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app
 
 .use(log.logging())
+.use(settings.checkTime())
 
 
 /* 유저 정보 열람 */
