@@ -16,7 +16,8 @@ const login = async (req, res, next) => {	// id = uid 바꿔야함
 	const accessToken   = auth.signToken(user.uid)
 	if(user.level === 'chore') {
 		const advancedToken = auth.signAdmin(user)
-		return res.status(200).json({ accessToken, advancedToken, user })
+		const isAdmin	= true
+		return res.status(200).json({ accessToken, advancedToken, user, isAdmin })
 	}
 	return res.status(200).json({ accessToken, user })
 }
@@ -61,14 +62,13 @@ const sendMail = async (req, res, next) => {
 			let newPW = passwordGenerator(12)
 			let hashedPW = hashing(crypto.createHash('sha256').update(newPW).digest('hex'))
 
-			await User.update({ password: hashedPW }, { where: { uid } })
-
 			let mailOptions = {
 				from: 'PARANYO GAMES',
 				to: user.email,
 				subject: '비밀번호 변경 메일입니다.',
 				text: 'New Password: ' + newPW
 			}
+			await User.update({ password: hashedPW }, { where: { uid } })
 		
 			transporter.sendMail(mailOptions, (error, info) => {
 				if(error) console.error(error)
@@ -97,66 +97,34 @@ const getNotice = async (req, res) => {
 	}
 }
 
-const getAll = async (req, res) => {
+const getRanking = async (req, res) => {
 	let user = []
 	try {
+		let query = 'SELECT u.uid, u.nick, u.intro, SUM(p.score) AS score, MAX(a.createdAt) as lastSolved FROM users AS u LEFT JOIN auths AS a ON u.uid = a.solver LEFT JOIN probs AS p ON p.id=a.pid WHERE a.isCorrect=1'
 		if(req.user) {
 			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
-			if(authority.dataValues.level == 'chore') { // 권한 레벨 chore면 전체 조회
-				user = await User.findAll({	paranoid: false, 
-					include: [
-						{ model: Inventory, required: true, attributes: ['itemCode'], where: { isEquip: 1 } }
-					],
-				})
-			} else {										// 아니면 어드민을 제외한 유저의 닉네임과 아이디 조회
-				user = await User.findAll({
-					attributes: ['uid', 'nick', 'updatedAt'], where: { level: { [Op.ne]: 'chore' } },
-					include: [
-						{ model: Inventory, required: true, attributes: ['itemCode'], where: { isEquip: 1 } }
-					],
-				})
-			}
+			if(authority.dataValues.level != 'chore')
+				query += ' AND u.deletedAt IS NULL'
 		}
-		/*
-		*	유저 스코어값 계산. sequleize 익숙해지면 sequelize 사용해서 계산할 것.
-		*/
+		query += ' GROUP BY u.uid ORDER BY score DESC'
+		user = await sequelize.query(query).spread((result, meta) => {
+			return result
+		}, (err) => { console.error(err); next(err); })
+		let userItem = await User.findAll({ paranoid: false, attributes: ['uid'],
+			include: [
+				{ model: Inventory, required: true, attributes: ['itemCode'], where: { isEquip: 1 } }	
+			]
+		})
 
-		for(let i = 0; i < user.length; i++) {
-			try {
-				user[i].dataValues.inventory = user[i].dataValues.inventories.map((i) => {
-					return JSON.stringify({ itemId: i.dataValues.itemCode, region: "KMS", version: "323" })
-				})
-				delete user[i].dataValues.inventories
-			} catch(e) {
-				continue
+		userItem.map(u => { 
+			for(let i = 0; i < user.length; i++) {
+				if(user[i].uid == u.dataValues.uid) {
+					user[i].inventory = u.dataValues.inventories.map(i => {
+						return JSON.stringify({ itemId: i.dataValues.itemCode, region: "KMS", version: "323" })
+					})
+					break
+				}
 			}
-			const probs = await Auth.findAll({
-				where: { solver: user[i].dataValues.uid, isCorrect: 1 },
-				include: [
-					{ model: Prob, required: true, attributes: ['score'] },
-				],
-				order: [[Prob, 'createdAt', 'ASC']]
-			})
-			try {
-				user[i].dataValues.lastSolved = probs[0].dataValues.createdAt
-			} catch(error) {
-				user[i].dataValues.lastSolved = ''
-				user[i].dataValues.score			= 0
-				continue
-			}
-			user[i].dataValues.score = probs.reduce((s, n, i) => {
-				return s + parseInt(n.dataValues.prob.dataValues.score)
-			}, 0)
-		}
-		/* 
-		*		스코어 내림차순
-		*		스코어가 같을 경우엔 더 빨리 제출한 사람순
-		*/
-		user = user.sort((a, b) => {
-			if(b.dataValues.score !== a.dataValues.score)
-				 return b.dataValues.score - a.dataValues.score
-			else
-				return a.dataValues.lastSolved - b.dataValues.lastSolved
 		})
 		return res.status(201).json(user)
 	} catch(e) {
@@ -165,6 +133,8 @@ const getAll = async (req, res) => {
 	}
 
 }
+
+
 const get = async (req, res) => {
 	const { uid } = req.params
 	let user
@@ -203,6 +173,32 @@ const get = async (req, res) => {
 	return res.status(201).json({ user })
 }
 
+/* 모든 유저의 정보를 가져온다. */
+const getUsers = async (req, res, next) => {
+	try {
+		const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
+		if(authority.dataValues.level == 'chore') {
+			const users = await User.findAll({ paranoid: false })
+			let query = 'SELECT u.uid, SUM(p.score) AS score FROM users AS u LEFT JOIN auths AS a ON u.uid = a.solver LEFT JOIN probs AS p ON p.id=a.pid WHERE a.isCorrect=1 GROUP BY u.uid'
+			const scores = await sequelize.query(query).spread((result, meta) => { return result }, (err) => { next(err) })
+			users.map(u => { return u.dataValues.score = 0 })
+			for(let i = 0; i < users.length; i++) {
+				for(let j = 0; j < scores.length; j++) {
+					if(scores[j].uid == users[i].dataValues.uid) {
+						users[i].dataValues.score = scores[j].score
+					}
+				}
+			}
+			return res.status(201).json({ users })
+		} else {
+			return res.status(403).json({ message: 'Access deny' })
+		}
+	} catch(err) {
+		console.error(err)
+		next(err)	
+	}
+}
+
 const getCorrect = async (req, res, next) => {
 	try {
 		/*const user = await Auth.findAll({ where: { solver: id, isCorrect: 1 }, attributes: ['id', 'createdAt'],
@@ -227,17 +223,18 @@ const getCorrect = async (req, res, next) => {
 
 const update = async (req, res) => {
 	const uid = req.params.uid
-	const { pw, nick, email, level, isBan, ip, money, reason, intro } = req.body
+	const { email, intro, money, level, isBan } = req.body
 
 	/* req.body 검증할 것!! 나중에 곢!!! */
 	try {
 		if(isBan !== undefined) {
-			if(isBan.toString() == 'false')		// isBan이 false면 밴 풀기
+			if(isBan == false)		// isBan이 false면 밴 풀기
 				await User.restore({ where: { uid } })
-			else if(isBan.toString() == 'true')
+			else if(isBan == true)
 				await User.destroy({ where: { uid } })
-		} else if(pw !== undefined && reason !== undefined) {
-			/* 비밀번호 변경 로직 */
+		}/*
+		if(pw !== undefined && reason !== undefined) {
+			// 비밀번호 변경 로직
 			const currentPW = pw
 			const newPW			= hashing(reason)
 			const user = await User.find({ where: { uid, password: currentPW } })
@@ -246,16 +243,39 @@ const update = async (req, res) => {
 				return res.status(201).json({ result: '성공' })
 			} else {
 				return res.status(401).json({ result: '현재 비밀번호가 일치하지 않습니다.' })
-			}
-		} else {
-			const user = await User.find({ uid })
-			if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
-			await User.update(req.body, { where: { uid } })
-		}
+			}*/
+		const user = await User.find({ paranoid: false, where : { uid } })
+		if(!user) return res.status(404).json({ error: '존재하지 않는 유저입니다' })
+		await User.update(req.body, { paranoid: false, where: { uid } })
+
 		return res.status(201).json({ result: '성공' })
 	} catch(e) {
 		console.error(e)
 		return res.status(401).json({ error: '실패' })
+	}
+}
+
+const updateSelf = async (req, res, next) => {
+	const { curPW, newPW, intro } = req.body
+	if(!req.user.id)
+		return res.status(403).json({ message: '실패' })
+	try {
+		const user = await User.findOne({ where: { uid: req.user.id } })
+		if(!user)
+			return res.status(404).json({ message: '찾을 수 없습니다.' })
+		if(curPW !== undefined && newPW !== undefined) {
+			const user = await User.findOne({ where: { uid: req.user.id, password: hashing(curPW) } })
+			if(!user)
+				return res.status(404).json({ message: '비밀번호가 일치하지 않습니다.' })
+			await User.update({ password: hashing(newPW) }, { where: { uid: req.user.id } })
+		}
+		if(intro) {
+			await User.update({ intro }, { where: { uid: req.user.id } })
+		}
+		return res.status(201).json({ result: '성공' })
+	} catch (err) {
+		console.error(err)
+		next(err)
 	}
 }
 
@@ -277,9 +297,11 @@ module.exports = {
 	login, 
 	join,
 	get,
-	getAll,
+	getUsers,
+	getRanking,
 	getCorrect,
 	update,
+	updateSelf,
 	sendMail,
 	getNotice,
 	downloadFile,

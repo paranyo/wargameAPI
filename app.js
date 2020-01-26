@@ -71,7 +71,7 @@ app
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
 .get('/myCorrect',	auth.ensureAuth('user'), user.getCorrect)
-.get('/user',				auth.ensureAuth('user'), user.getAll)
+.get('/user',				auth.ensureAuth('user'), user.getRanking)
 
 /* 로그인, 가입, 비밀번호 분실 관련 */
 .post('/user/login',  user.login)
@@ -101,6 +101,8 @@ app
 .post('/manage/hash',		auth.ensureAuth('admin'), admin.getHash)
 .post('/manage/log',		auth.ensureAuth('admin'), admin.getLog)
 .put('/user/:uid',			auth.ensureAuth('admin'), user.update)
+.put('/user',						auth.ensureAuth('user'), user.updateSelf)
+.get('/manage/user',		auth.ensureAuth('admin'), user.getUsers)
 
 /* 파일 관련 */
 .post('/manage/file/upload', auth.ensureAuth('admin'), upload.single('file'), admin.uploadFile)
@@ -134,10 +136,10 @@ app
 
 
 /* 404 에러 처리 */
-app.use((req, res, next) => {
+/*app.use((req, res, next) => {
 	console.log('\n\nERROR\n\n')
   next(createError(404))
-})
+})*/
 
 
 /* 에러 핸들러 */
@@ -145,6 +147,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
 	res.locals.message = err.message
 	res.locals.error = req.app.get('env') === 'development' ? err : {}
+	console.error(err)
 	if(err.original.sql)
 		saveError(err)
 	switch(err.original.code) {
