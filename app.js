@@ -59,14 +59,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-
 app
-
 .use(log.logging())
+
+
+.post('/user/login',  user.login)
+.post('/user/join',   user.join)
+.post('/user/sendMail',   user.sendMail)
 .use(settings.checkTime())
-
-
 /* 유저 정보 열람 */
 .get('/user/:uid',	auth.ensureAuth('user'), user.get)
 .get('/myinfo',			auth.ensureAuth('user'), user.get)
@@ -74,9 +74,6 @@ app
 .get('/user',				auth.ensureAuth('user'), user.getRanking)
 
 /* 로그인, 가입, 비밀번호 분실 관련 */
-.post('/user/login',  user.login)
-.post('/user/join',   user.join)
-.post('/user/sendMail',   user.sendMail)
 
 
 /* 공지사항 관련 */

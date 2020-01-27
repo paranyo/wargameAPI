@@ -59,7 +59,7 @@ const useBox = async (req, res) => {
 				else if(box.dataValues.itemCode == 5530113)	cCode = 14	// 방패
 				else if(box.dataValues.itemCode == 4001000)	cCode = 15	// 신발
 				else if(box.dataValues.itemCode == 2431937)	cCode = 16	// 한손 무기
-				else if(box.dataValues.itemCode == 2431941)	cCode = 17	// 두손 무기
+			//else if(box.dataValues.itemCode == 2431941)	cCode = 17	// 두손 무기
 				else if(box.dataValues.itemCode == 2435004)	cCode = 18	// 의자
 				else if(box.dataValues.itemCode	== 4000703) cCode = box.dataValues.itemCode	//
 				else if(box.dataValues.itemCode	== 1162000) cCode = box.dataValues.itemCode	//
