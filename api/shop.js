@@ -40,7 +40,14 @@ const get = async (req, res, next) => {
 		return res.status(201).json({ shop: result })
 	}, (err) => { console.error(err); next(err) })
 }
-
+const getItems = async (req, res, next) => {
+	try {
+		let shopItems = await Item.findAll({ where: { cCode: 99 } })
+		return res.status(201).json(shopItems)
+	} catch(err) {
+		next(err)
+	}
+}
 const create = async (req, res, next) => {
 	const { pdCode, price, pdCount, description, deadLine } = req.body
 	try {
@@ -79,6 +86,7 @@ module.exports = {
 	buy,
 	getProduct,
 	get,
+	getItems,
 	create,
 	update,
 	remove

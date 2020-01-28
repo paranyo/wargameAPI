@@ -84,10 +84,10 @@ const getSetting = async (req, res, next) => {
 }
 
 const updateSetting = async (req, res, next) => {
-	const { id, value } = req.body
-	if(!id || !value) return res.status(403).json({ result: false })
+	const { name, value } = req.body
+	if(!name || !value) return res.status(403).json({ result: false })
 	try {
-		await Setting.update({ value }, { where: { id } })
+		await Setting.update({ value }, { where: { name } })
 		return res.status(203).json({ result: true })
 	} catch(e) {
 		next(e)
