@@ -27,7 +27,7 @@ const buy = async (req, res, next) => {
 const getProduct = async (req, res, next) => {
 	if(!req.params.id)
 		return res.status(403).json({ result: false })
-	let query = 'SELECT S.id as idx, I.name, I.id, S.price, S.pdCount, S.description, S.createdAt, S.deadLine, S.deadLine FROM shops as S INNER JOIN items as I ON I.id=S.pdCode WHERE S.id=:id ANS S.deletedAt IS NULL'
+	let query = 'SELECT S.id as idx, I.name, I.id, S.price, S.pdCount, S.description, S.createdAt, S.deadLine, S.deadLine FROM shops as S INNER JOIN items as I ON I.id=S.pdCode WHERE S.id=:id AND S.deletedAt IS NULL'
 	let values = { id: req.params.id }
 	await sequelize.query(query, { replacements: values }).spread((result, meta) => {
 		return res.status(201).json({ shop: result[0] })
