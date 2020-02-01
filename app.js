@@ -116,10 +116,10 @@ app
 /* 상점 관련 */
 .get('/shop/:id', auth.ensureAuth('user'), shop.getProduct)
 .get('/shop',	auth.ensureAuth('user'), shop.get)
-.get('/manage/shop', auth.ensureAuth('admin'), shop.getItems)
 .post('/manage/shop/create', auth.ensureAuth('admin'), shop.create)
 .post('/manage/shop/update/:id', auth.ensureAuth('admin'), shop.update)
 .put('/manage/shop/remove/:id', auth.ensureAuth('admin'), shop.remove)
+.get('/manage/shop', auth.ensureAuth('admin'), shop.getItems)
 .get('/shop/buy/:pId', auth.ensureAuth('user'), shop.buy)
 
 .get('/setting', admin.getSetting)

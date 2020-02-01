@@ -1,4 +1,4 @@
-const { Setting, ErrorLog, File, Auth, Log, Sequelize: { Op } } = require('../models')
+const { Setting, ErrorLog, File, Auth, Log, Sequelize: { Op }, sequelize } = require('../models')
 const path = require('path')
 const shell = require('shelljs')
 const { hashing } = require('../hashing')
@@ -93,7 +93,44 @@ const updateSetting = async (req, res, next) => {
 		next(e)
 	}
 }
-
+/*
+const dbClear = async (req, res, next) => {
+	try {
+		let clear = [
+			'DELETE FROM users WHERE uid!="paranyo"',
+			'DELETE FROM auctions',
+			'DELETE FROM auths',
+			'DELETE FROM bids',
+			'DELETE FROM errorLogs',
+			'DELETE FROM files',
+			'DELETE FROM inventories WHERE userId!="paranyo"',
+			'DELETE FROM logs',
+			'DELETE FROM notices WHERE id!=1',
+			'DELETE FROM probs',
+			'DELETE FROM shops',
+			'DELETE FROM tags',
+		]
+		let tbs = ['users', 'auctions', 'auths', 'bids', 'errorLogs', 'files', 'inventories', 'logs', 'notices', 'probs', 'shops', 'tags']
+		for(let i = 0; i < clear.length; i++) {
+			await sequelize.query(clear[i])
+			console.log('\n\n\n!! ' + tbs[i]  + ' CLEAR !! \n\n\n')
+		}
+		let autoIncrements = []
+		for(let i = 0; i < tbs.length; i++) {
+			 autoIncrements = [
+				'ALTER TABLE '+tbs[i]+' AUTO_INCREMENT=1',
+				'SET @COUNT=0',
+				'UPDATE '+tbs[i]+' SET id=@COUNT:=@COUNT+1'
+			]
+			for(let j =0; j < autoIncrements.length; j++) {
+				await sequelize.query(autoIncrements[j])
+			}
+			console.log('\n\n\n!! ' + tbs[i]  + ' SET AUTO_INCREMENT !! \n\n\n')
+		}
+	} catch(err) {
+		console.error(err)	
+	}
+} */
 module.exports = {
 	getHash,
 	getLog,

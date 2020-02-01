@@ -178,9 +178,9 @@ const authProb = async(req, res) => {
 				const already = await Auth.findOne({ where: { solver: req.user.id, pid: id, isCorrect: 1 } })
 				if(already) {
 					if(prob.dataValues.flag === flag)
-						return res.status(201).json({ result: 'Already Solved, But Correct!' })
+						return res.status(201).json({ result: '정답입니다. (이미 푼 문제)' })
 					else 
-						return res.status(201).json({ result: 'Already Solved and Incorrect!' })
+						return res.status(201).json({ result: '오답입니다. (이미 푼 문제)' })
 				}
 				if(prob.dataValues.flag === flag) {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: true, flag: req.body.rFlag })
@@ -200,10 +200,10 @@ const authProb = async(req, res) => {
 						itemCode: randomBox, cCode: 99, userId: req.user.id	
 					})
 					
-					return res.status(201).json({ result: 'Correct!' })
+					return res.status(201).json({ result: '정답입니다!' })
 				} else {
 					await Auth.create({ pid: id, solver: req.user.id, isCorrect: false, flag: req.body.rFlag })
-					return res.status(201).json({ result: 'Incorrect' })
+					return res.status(201).json({ result: '오답입니다.' })
 				}
 			} else { // 문제가 없을 경우
 				return res.status(404).json({ message: '문제가 닫혀있거나 찾을 수 없습니다' })
