@@ -10,8 +10,12 @@ const nodemailer	= require('nodemailer')
 require('dotenv').config()
 
 const login = async (req, res, next) => {	// id = uid 바꿔야함
-	const { id, pw } = req.body
-	const user = await User.findOne({ where: { [Op.and]: [{ uid: id }, { password: pw }] } })
+	let query = 'SELECT uid, deletedAt, level FROM users WHERE uid=:id AND password=:pw'
+	let values = { id: req.body.id, pw: req.body.pw }
+	const user = await sequelize.query(query, { replacements: values }).spread((result, meta) => {
+		return result[0]
+	})
+	if(user.deletedAt != null) return res.status(401).json({ error: '차단된 계정: ' + user.deletedAt.toISOString().replace('T', ' ').substring(2, 19) + ' ~ 무기한' })
 	if(!user) return res.status(401).json({ error: '실패' })
 	const accessToken   = auth.signToken(user.uid)
 	if(user.level === 'chore') {
@@ -24,11 +28,13 @@ const login = async (req, res, next) => {	// id = uid 바꿔야함
 
 const join = async (req, res, next) => { // id = uid, pw = password 나중에 바꿔야함 DB에 넣기 쉽게
 	const { id, nick, email, pw } = req.body
+	let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'No Data'
+	ip = ip.split(',')[0]
 	try {		// 이미 있는 id or nick
 		const exUser = await User.find({ where: { [Op.or]: [{ uid: id }, { nick }], } })
 		if(exUser)
 			return res.status(401).json({ error: '이미 계정이 있습니다' })
-		await User.create({ uid: id, nick, email, password: pw, ip: '127.0.0.1' }) // 유저 생성
+		await User.create({ uid: id, nick, email, password: pw, ip: ip }) // 유저 생성
 		await Inventory.create({ userId: id, isEquip: 1, itemCode: 30000, cCode: 1 })
 		await Inventory.create({ userId: id, isEquip: 1, itemCode: 20000, cCode: 2 })
 		return res.status(200).json({ result: true })
@@ -68,11 +74,13 @@ const sendMail = async (req, res, next) => {
 				subject: '비밀번호 변경 메일입니다.',
 				text: 'New Password: ' + newPW
 			}
-			await User.update({ password: hashedPW }, { where: { uid } })
 		
-			transporter.sendMail(mailOptions, (error, info) => {
-				if(error) console.error(error)
-				else console.log('비밀번호 변경 메일을 보냈습니다 => ' + info.response)
+			transporter.sendMail(mailOptions, async (error, info) => {
+				if(error) next(error)
+				else {
+					console.log('비밀번호 변경 메일을 보냈습니다 => ' + info.response)
+					await User.update({ password: hashedPW }, { where: { uid } })
+				}
 			})
 			return res.status(201).json({ result: '성공' })
 
@@ -224,7 +232,9 @@ const getCorrect = async (req, res, next) => {
 const update = async (req, res) => {
 	const uid = req.params.uid
 	const { email, intro, money, level, isBan } = req.body
-
+	if(intro.length > 32) {
+		return res.status(403).json({ message: 'intro는 32글자를 초과할 수 없습니다.' })
+	}
 	/* req.body 검증할 것!! 나중에 곢!!! */
 	try {
 		if(isBan !== undefined) {
@@ -259,6 +269,8 @@ const updateSelf = async (req, res, next) => {
 	const { curPW, newPW, intro } = req.body
 	if(!req.user.id)
 		return res.status(403).json({ message: '실패' })
+	if(intro.length > 32)
+		return res.status(403).json({ message: 'intro의 길이는 최대 32글자입니다.' })
 	try {
 		const user = await User.findOne({ where: { uid: req.user.id } })
 		if(!user)

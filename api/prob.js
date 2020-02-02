@@ -5,7 +5,7 @@ const getProbs = async (req, res) => {
 	const { tags } = req.body
 	try {
 		if(req.user) {
-			const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
+			const authority = await User.findOne({ attributes: ['level'], where: { uid: req.user.id } })
 			let tagList = tags ? { where: { tagId: { [Op.in]: tags } } } : {}
 			if(authority.dataValues.level == 'chore') {
 				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },
@@ -60,7 +60,7 @@ const getProbs = async (req, res) => {
 const getProb = async(req, res, next) => {
 	try {
 		const { id } = req.params
-		const authority = await User.find({ attributes: ['level'], where: { uid: req.user.id } })
+		const authority = await User.findOne({ attributes: ['level'], where: { uid: req.user.id } })
 		let prob
 		if(authority.dataValues.level == 'chore') {
 			prob = await Prob.findOne({ where: { id }, paranoid: false })
@@ -189,12 +189,12 @@ const authProb = async(req, res) => {
 					let randomBox	= 0
 
 					/* 나중에 아이템 수정하깅 */ 
-					if(lottery > 0 && lottery < 84)					randomBox	=	4000703
-					else if(lottery > 84 && lottery < 89)		randomBox	= 1162000
-					else if(lottery > 89 && lottery < 99)		randomBox	= 1162000
-					else if(lottery > 99 && lottery < 99.5)	randomBox	= 1162000
-					else if(lottery > 84 && lottery < 99.9)	randomBox	= 1162000
-					else if(lottery == 99.9)								randomBox	= 1162000
+					if(lottery > 0 && lottery < 75)					randomBox	=	4000703
+					else if(lottery > 75 && lottery < 90)		randomBox	= 1162000
+					else if(lottery > 90 && lottery < 95)		randomBox	= 4031008
+					else if(lottery > 95 && lottery < 98)		randomBox	= 1322008
+					else if(lottery > 98 && lottery < 99.5)	randomBox	= 2028048
+					else if(lottery > 99.5)									randomBox	= 5830001
 					
 					await Inventory.create({ 
 						itemCode: randomBox, cCode: 99, userId: req.user.id	

@@ -76,7 +76,11 @@ const useBox = async (req, res) => {
 					/* 랜덤 머니 주는 곳이에요 */
 					let money = 0
 					if(cCode == 4000703)			money = Math.floor(Math.random() * 1000) * 10
-					else if(cCode == 1162000) money = Math.floor(Math.random() * 300) * 1000
+					else if(cCode == 1162000) money = Math.floor(Math.random() * 150) * 1000
+					else if(cCode == 4031008) money = Math.floor(Math.random() * 500) * 1000
+					else if(cCode == 1322008) money = Math.floor(Math.random() * 500) * 10000
+					else if(cCode == 2028048) money = Math.floor(Math.random() * 1000) * 10000
+					else if(cCode == 5830001) money = Math.floor(Math.random() * 10000) * 10000
 
 					if(money > 0) {
 						await User.findOne({ where: { uid }, attributes: ['money', 'uid'] }).then(async (user) => {

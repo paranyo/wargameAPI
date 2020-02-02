@@ -51,6 +51,9 @@ const getItems = async (req, res, next) => {
 const create = async (req, res, next) => {
 	const { pdCode, price, pdCount, description, deadLine } = req.body
 	try {
+		if(price <= -1) {
+			return res.status(403).json({ message: '최소 가격은 0원입니다' })
+		}
 		if(pdCount > -1) {
 			await Shop.create({ pdCode, price, pdCount, description, deadLine })
 			return res.status(201).json({ result: true })
@@ -63,6 +66,9 @@ const create = async (req, res, next) => {
 const update = async (req, res, next) => {
 	const { id } = req.params
 	try {
+		if(req.body.price <= -1) {
+			return res.status(403).json({ message: '최소 가격은 0원입니다' })
+		}
 		await Shop.update(req.body, { where: { id } })
 		return res.status(201).json({ result: true })
 	}	catch (e) {

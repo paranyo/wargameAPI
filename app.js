@@ -145,17 +145,21 @@ app
 app.use((err, req, res, next) => {
 	res.locals.message = err.message
 	res.locals.error = req.app.get('env') === 'development' ? err : {}
-	console.error(err)
-	if(err.original.sql)
+	if(err.original) {
 		saveError(err)
-	switch(err.original.code) {
-		case 'ER_NO_REFERENCED_ROW_2':
-			return res.status(400).json({ message: err.fields + ' 필드의 값을 확인하세요' })
-		case 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD':
-			return res.status(400).json({ message: '부적절한 자료형을 확인하세요.' })
-		default:
-			return res.status(400).json({ message: 'error' })
-	} 
+		switch(err.original.code) {
+			case 'ER_NO_REFERENCED_ROW_2':
+				return res.status(400).json({ message: err.fields + ' 필드의 값을 확인하세요' })
+			case 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD':
+				return res.status(400).json({ message: '부적절한 자료형을 확인하세요.' })
+			case 'ER_TRUNCATED_WRONG_VALUE':
+				return res.status(400).json({ message: '잘못된 날짜 형식입니다.' })
+			default:
+				return res.status(400).json({ message: 'error' })
+		} 
+	}
+	console.error(err)
+	next()
 })
 
 const server = app.listen(app.get('port'), () => {
