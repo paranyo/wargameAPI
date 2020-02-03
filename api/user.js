@@ -36,7 +36,9 @@ const join = async (req, res, next) => { // id = uid, pw = password 나중에 �
 			return res.status(401).json({ error: '이미 계정이 있습니다' })
 		await User.create({ uid: id, nick, email, password: pw, ip: ip }) // 유저 생성
 		await Inventory.create({ userId: id, isEquip: 1, itemCode: 30000, cCode: 1 })
-		await Inventory.create({ userId: id, isEquip: 1, itemCode: 20000, cCode: 2 })
+		await Inventory.create({ userId: id, isEquip: 1, itemCode: 20002, cCode: 2 })
+		await Inventory.create({ userId: id, isEquip: 1, itemCode: 1040002, cCode: 10 })
+		await Inventory.create({ userId: id, isEquip: 1, itemCode: 1060002, cCode: 13 })
 		return res.status(200).json({ result: true })
 
 	} catch (error) {

@@ -31,7 +31,7 @@ const bidding = async (req, res, next) => {
 const get = async (req, res, next) => {
 	try {
 		const auction = await Auction.find({ where: { winner: null } })
-		let query = 'SELECT a.id, a.price, a.end, a.owner, a.itemId, i.itemCode, items.name, IC.name as cate, MAX(b.cost) as bid FROM auctions AS a LEFT JOIN inventories AS i ON i.id=a.itemId LEFT JOIN items ON i.itemCode=items.id LEFT JOIN itemCategories as IC ON items.cCode=IC.id LEFT JOIN bids as b ON a.id=b.aId WHERE a.winner IS null AND a.deletedAt IS null GROUP BY a.id'
+		let query = 'SELECT a.id, a.price, a.end, a.createdAt, a.owner, a.itemId, i.itemCode, items.name, IC.name as cate, MAX(b.cost) as bid FROM auctions AS a LEFT JOIN inventories AS i ON i.id=a.itemId LEFT JOIN items ON i.itemCode=items.id LEFT JOIN itemCategories as IC ON items.cCode=IC.id LEFT JOIN bids as b ON a.id=b.aId WHERE a.winner IS null AND a.deletedAt IS null GROUP BY a.id'
 		await sequelize.query(query).spread((result, meta) => {
 			return res.status(203).json(result)
 		}, (err) => { console.error(err); next(err) })

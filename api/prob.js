@@ -1,55 +1,38 @@
-const { File,Inventory, Auth, User, Prob, Tag, Sequelize: { Op } } = require('../models')
+const { File,Inventory, Auth, User, Prob, Tag, Sequelize: { Op }, sequelize } = require('../models')
 const { hashing } = require('../hashing')
 
 const getProbs = async (req, res) => {
 	const { tags } = req.body
+	let query = ''
+	let value = {}
 	try {
 		if(req.user) {
 			const authority = await User.findOne({ attributes: ['level'], where: { uid: req.user.id } })
-			let tagList = tags ? { where: { tagId: { [Op.in]: tags } } } : {}
+				query = "SELECT p.id, p.title, p.description, p.src, p.score, p.createdAt, p.updatedAt, p.deletedAt, p.author, p.tagId, p.fileId, u.nick AS author, t.title AS tag, SUM(a.isCorrect) AS solver FROM probs AS p LEFT JOIN users AS u ON author=uid LEFT JOIN tags AS t ON t.id=p.tagId LEFT JOIN auths AS a ON p.id=a.pid WHERE tagId IN (:tags) GROUP BY p.id"
 			if(authority.dataValues.level == 'chore') {
-				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } },
-					include: [{ model: Prob, required: true, paranoid: false }], order: [[Prob, 'createdAt', 'DESC']]
-				})
-			} else { // 나중에 플래그 같은 값은 없애고 보내야함
-				list2 = await Tag.findAll({ tagList, where: { id: { [Op.in]: tags } }, 
-					include: [
-						{ model: Prob, required: true, 
-	/*						include: [
-							{	model: Auth, required: true, attributes: ['isCorrect'] },
-							{ where : { solver: req.user.id } }
-						]*/
-						}
-					]
-				})
+			} else {
+				query = "SELECT p.id, p.title, p.description, p.src, p.score, p.createdAt, p.updatedAt, p.deletedAt, p.author, p.tagId, p.fileId, u.nick AS author, t.title AS tag, SUM(a.isCorrect) AS solver FROM probs AS p LEFT JOIN users AS u ON author=uid LEFT JOIN tags AS t ON t.id=p.tagId LEFT JOIN auths AS a ON p.id=a.pid WHERE tagId IN (:tags) AND p.deletedAt IS NULL GROUP BY p.id"
 			}
-			/* isCorrect 구하기 */
-			const authList = await Auth.findAll({ solver: req.user.id, 
-					attributes: ['isCorrect', 'solver', 'pid'] })
-			/* Solver  구하기 */
-			for(let i = 0; i < list2.length; i++) {
-				for(let j = 0; j < list2[i].dataValues.probs.length; j++) {
-					list2[i].dataValues.probs[j].dataValues.tag = list2[i].dataValues.title
-					let pid = list2[i].dataValues.probs[j].dataValues.id
-					const solvers = await Auth.findAll({
-						where: { pid, isCorrect: 1 },
-						include: [{ model: Prob, required: true, }]
-					})
-					list2[i].dataValues.probs[j].dataValues.solver = solvers.length
-					/* isCorrect 구하기 */
-					for(let k = 0; k < authList.length; k++) {
-						if(authList[k].dataValues.pid == list2[i].dataValues.probs[j].dataValues.id) {
-							list2[i].dataValues.probs[j].dataValues.isCorrect = authList[k].dataValues.isCorrect
-							authList.splice(k, 1)
-						}
+			if(tags.length <= 0)
+				tags.push(0)
+			value = { tags }
+			const prob2 = await sequelize.query(query, { replacements: value }).spread((result, meta) => {
+				return result.map(a => a)
+			}, (err) => { console.error(err) })
+			query = "SELECT pid, isCorrect FROM auths WHERE solver=:uid AND isCorrect=1"
+			value = { uid: req.user.id }
+			const auth2 = await sequelize.query(query, { replacements: value }).spread((result, meta) => {
+				return result.map(a => a)
+			}, (err) => { console.error(err) })
+
+			auth2.map(a => {
+				prob2.map(p => {
+					if(a.pid == p.id)	{
+						return p.isCorrect = true
 					}
-				}
-			}
-			let list = []
-			list2.forEach((tag) => { tag.dataValues.probs.forEach(a => { list.push(a) })	})
-
-
-			return res.status(201).json({ list })
+				})
+			})
+			return res.status(201).json({ list: prob2 })
 		}
 	} catch (e) {
 		console.dir(e)
