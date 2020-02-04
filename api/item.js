@@ -14,16 +14,20 @@ const getItems = async (req, res) => {
 }
 
 const equipItem = async (req, res) => {
-	const { itemCode } = req.body
+	const { itemCode, cCode } = req.body
 	const userId			 = req.params.uid
+	let select = ''
 	if(!userId || !itemCode || (userId !== req.user.id))
 		return res.status(403).json({ result: '실패' })
-	let selected = await Item.findOne({ where: { id: itemCode }, attributes: ['cCode'] })
-	await Inventory.update({ isEquip: 0 }, { where: { cCode: selected.dataValues.cCode, userId }
-	}).then(async () => {
-		await Inventory.update({ isEquip: 1 }, { where: { itemCode: itemCode, userId } })
-	})
-	
+		// 10, 13 상 하의 12 오버롤
+	if(cCode == 12) {
+		await Inventory.update({ isEquip: 0 }, { where: { cCode: { [Op.in]: [10, 13, cCode] }, userId } }).then(async () => { await Inventory.update({ isEquip: 1 }, { where: { itemCode: itemCode, userId } })	})
+	} else if(cCode == 10 || cCode == 13) {
+		await Inventory.update({ isEquip: 0 }, { where: { cCode: { [Op.in]: [12, cCode] }, userId } }).then(async () => { await Inventory.update({ isEquip: 1 }, { where: { itemCode: itemCode, userId } })	})
+	} else {
+		selected = await Item.findOne({ where: { id: itemCode }, attributes: ['cCode'] })
+		await Inventory.update({ isEquip: 0 }, { where: { cCode: selected.dataValues.cCode, userId } }).then(async () => { await Inventory.update({ isEquip: 1 }, { where: { itemCode: itemCode, userId } }) })
+	}
 	let items = await Inventory.findAll({ where: { userId, isEquip: 1 }, attributes: ['itemCode']})
 	return res.status(201).json({ items })
 }
@@ -40,6 +44,7 @@ const clearEquip = async (req, res, next) => {
 
 const useBox = async (req, res) => {
 	const { uid, id, idx } = req.body
+	console.log(req.body)
 	if(uid !== req.user.id || !id) return res.status(403).json({ result: '실패' })
 	try {
 		await Inventory.findOne({ where: { itemCode: req.body.id, userId: uid, id: idx } }).then(async (box) => {
@@ -63,6 +68,10 @@ const useBox = async (req, res) => {
 				else if(box.dataValues.itemCode == 2435004)	cCode = 18	// 의자
 				else if(box.dataValues.itemCode	== 4000703) cCode = box.dataValues.itemCode	//
 				else if(box.dataValues.itemCode	== 1162000) cCode = box.dataValues.itemCode	//
+				else if(box.dataValues.itemCode	== 4031008) cCode = box.dataValues.itemCode	//
+				else if(box.dataValues.itemCode	== 1322008) cCode = box.dataValues.itemCode	//
+				else if(box.dataValues.itemCode	== 2028048) cCode = box.dataValues.itemCode	//
+				else if(box.dataValues.itemCode	== 5830001) cCode = box.dataValues.itemCode	//
 				else	return res.status(503).json({ result: '비정상 접근입니다.' })
 				await box.destroy()
 				if(cCode < 100) {
